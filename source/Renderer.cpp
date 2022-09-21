@@ -48,10 +48,15 @@ void Renderer::Render(Scene* pScene) const
 
 			HitRecord closestHit{};
 			pScene->GetClosestHit(viewRay, closestHit);
-
+			//Plane testPlane{ {0.f, -50.f, 0.f}, {0.f, 1.f, 0.f} };
+			//GeometryUtils::HitTest_Plane(testPlane, viewRay, closestHit);
 
 			if (closestHit.didHit)
 			{
+				//T-value visualization
+				//const float scaled_t = closestHit.t / 500.f;
+				//finalColor = { scaled_t, scaled_t, scaled_t };
+
 				finalColor = materials[closestHit.materialIndex]->Shade();
 			}
 
