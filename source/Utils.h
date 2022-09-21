@@ -22,15 +22,15 @@ namespace dae
 
 			if (discriminant > 0) 
 			{
-				if (discriminant >= ray.min && discriminant <= ray.max)
+				if (discriminant >= ray.min && discriminant < ray.max)
 				{
+					hitRecord.materialIndex = sphere.materialIndex;
 					hitRecord.t = (-b - sqrt(discriminant)) / (2 * a);
 					hitRecord.didHit = true;
+					hitRecord.origin = ray.origin + hitRecord.t * ray.direction;
 					return true;
 				}
-
 			}
-
 			return false;
 		}
 
@@ -44,8 +44,16 @@ namespace dae
 		//PLANE HIT-TESTS
 		inline bool HitTest_Plane(const Plane& plane, const Ray& ray, HitRecord& hitRecord, bool ignoreHitRecord = false)
 		{
-			//todo W1
-			assert(false && "No Implemented Yet!");
+			const float t = Vector3::Dot(plane.origin - ray.origin, plane.normal) / Vector3::Dot(ray.direction, plane.normal);
+			if (t >= ray.min && t < ray.max)
+			{
+				hitRecord.materialIndex = plane.materialIndex;
+				hitRecord.t = t;
+				hitRecord.didHit = true;
+				hitRecord.normal = plane.normal;
+				hitRecord.origin = ray.origin + hitRecord.t * ray.direction;
+				return true;
+			}
 			return false;
 		}
 
