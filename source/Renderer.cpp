@@ -10,6 +10,8 @@
 #include "Scene.h"
 #include "Utils.h"
 
+#include <iostream>
+
 using namespace dae;
 
 Renderer::Renderer(SDL_Window * pWindow) :
@@ -46,6 +48,10 @@ void Renderer::Render(Scene* pScene) const
 				static_cast<uint8_t>(finalColor.b * 255));
 		}
 	}
+
+	Vector3 crossResult{};
+	crossResult = Vector3::Cross(Vector3::UnitY, Vector3::UnitZ);
+	std::cout << "Cross Result: (" << crossResult.x << ", " << crossResult.y << ", " << crossResult.z << ")\n";
 
 	//@END
 	//Update SDL Surface
