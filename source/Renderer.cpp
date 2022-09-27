@@ -38,9 +38,8 @@ void Renderer::Render(Scene* pScene) const
 			float cx = (2.f * ((px + 0.5f) / m_Width) - 1) * ar;
 			float cy = 1.f - (2.f * (py + 0.5f) / m_Height);
 
-			Vector3 rayDirection{ cx, cy, 1 };
+			Vector3 rayDirection{camera.right * cx + camera.up * cy + camera.forward };
 			rayDirection.Normalize();
-
 
 			Ray viewRay{ {0, 0, 0},  rayDirection };
 
@@ -48,15 +47,8 @@ void Renderer::Render(Scene* pScene) const
 
 			HitRecord closestHit{};
 			pScene->GetClosestHit(viewRay, closestHit);
-			//Plane testPlane{ {0.f, -50.f, 0.f}, {0.f, 1.f, 0.f} };
-			//GeometryUtils::HitTest_Plane(testPlane, viewRay, closestHit);
-
 			if (closestHit.didHit)
 			{
-				//T-value visualization
-				//const float scaled_t = closestHit.t / 500.f;
-				//finalColor = { scaled_t, scaled_t, scaled_t };
-
 				finalColor = materials[closestHit.materialIndex]->Shade();
 			}
 

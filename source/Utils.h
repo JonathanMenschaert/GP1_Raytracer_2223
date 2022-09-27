@@ -22,12 +22,23 @@ namespace dae
 
 			if (discriminant > 0) 
 			{
-				if (discriminant >= ray.min && discriminant < ray.max)
+				float discriminantSqrt{ sqrt(discriminant) };
+				float t{ (-b - discriminantSqrt) / (2 * a) };
+				if (t < ray.min)
+				{
+					t = (-b + discriminantSqrt) / (2 * a);
+					if (t < ray.min)
+					{
+						return false;
+					}
+				}
+				if (t < ray.max)
 				{
 					hitRecord.materialIndex = sphere.materialIndex;
-					hitRecord.t = (-b - sqrt(discriminant)) / (2 * a);
+					hitRecord.t = t;
 					hitRecord.didHit = true;
 					hitRecord.origin = ray.origin + hitRecord.t * ray.direction;
+					hitRecord.normal = (hitRecord.origin - sphere.origin).Normalized();
 					return true;
 				}
 			}
