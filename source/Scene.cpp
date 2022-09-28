@@ -149,7 +149,7 @@ namespace dae {
 	void Scene_W2::Initialize()
 	{
 		m_Camera.origin = { 0.f, 3.f, -9.f };
-		m_Camera.fovAngle = 45.f;
+		m_Camera.fovAngle = tanf(45.f * static_cast<float>(M_PI) / 360.f);
 
 		//default: Material id0 >> SolidColor Material (Red)
 		constexpr unsigned char matId_Solid_Red = 0;

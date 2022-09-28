@@ -35,13 +35,13 @@ void Renderer::Render(Scene* pScene) const
 	{
 		for (int py{}; py < m_Height; ++py)
 		{
-			float cx = (2.f * ((px + 0.5f) / m_Width) - 1) * ar;
-			float cy = 1.f - (2.f * (py + 0.5f) / m_Height);
+			float cx = (2.f * ((px + 0.5f) / m_Width) - 1) * ar * camera.fovAngle;
+			float cy = (1.f - (2.f * (py + 0.5f) / m_Height)) * camera.fovAngle;
 
 			Vector3 rayDirection{camera.right * cx + camera.up * cy + camera.forward };
 			rayDirection.Normalize();
 
-			Ray viewRay{ {0, 0, 0},  rayDirection };
+			Ray viewRay{ camera.origin,  rayDirection };
 
 			ColorRGB finalColor{};
 
