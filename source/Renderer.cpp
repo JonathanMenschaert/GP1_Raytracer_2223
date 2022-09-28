@@ -30,6 +30,7 @@ void Renderer::Render(Scene* pScene) const
 	auto& lights = pScene->GetLights();
 
 	const float ar{ m_Width / static_cast<float>(m_Height) };
+	const Matrix cameraToWorld = camera.CalculateCameraToWorld();
 
 	for (int px{}; px < m_Width; ++px)
 	{
@@ -38,7 +39,7 @@ void Renderer::Render(Scene* pScene) const
 			float cx = (2.f * ((px + 0.5f) / m_Width) - 1) * ar * camera.fovAngle;
 			float cy = (1.f - (2.f * (py + 0.5f) / m_Height)) * camera.fovAngle;
 
-			Vector3 rayDirection{camera.right * cx + camera.up * cy + camera.forward };
+			Vector3 rayDirection{cameraToWorld.TransformVector(cx, cy, 1)};
 			rayDirection.Normalize();
 
 			Ray viewRay{ camera.origin,  rayDirection };
