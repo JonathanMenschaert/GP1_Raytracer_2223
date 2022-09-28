@@ -36,8 +36,8 @@ void Renderer::Render(Scene* pScene) const
 	{
 		for (int py{}; py < m_Height; ++py)
 		{
-			float cx = (2.f * ((px + 0.5f) / m_Width) - 1) * ar * camera.fovAngle;
-			float cy = (1.f - (2.f * (py + 0.5f) / m_Height)) * camera.fovAngle;
+			float cx = (2.f * ((px + 0.5f) / m_Width) - 1) * ar * camera.fov;
+			float cy = (1.f - (2.f * (py + 0.5f) / m_Height)) * camera.fov;
 
 			Vector3 rayDirection{cameraToWorld.TransformVector(cx, cy, 1)};
 			rayDirection.Normalize();

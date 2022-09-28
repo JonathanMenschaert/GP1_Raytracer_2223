@@ -34,11 +34,14 @@ namespace dae
 				}
 				if (t < ray.max)
 				{
-					hitRecord.materialIndex = sphere.materialIndex;
-					hitRecord.t = t;
-					hitRecord.didHit = true;
-					hitRecord.origin = ray.origin + hitRecord.t * ray.direction;
-					hitRecord.normal = (hitRecord.origin - sphere.origin).Normalized();
+					if (!ignoreHitRecord)
+					{
+						hitRecord.materialIndex = sphere.materialIndex;
+						hitRecord.t = t;
+						hitRecord.didHit = true;
+						hitRecord.origin = ray.origin + hitRecord.t * ray.direction;
+						hitRecord.normal = (hitRecord.origin - sphere.origin).Normalized();
+					}
 					return true;
 				}
 			}
@@ -58,11 +61,14 @@ namespace dae
 			const float t = Vector3::Dot(plane.origin - ray.origin, plane.normal) / Vector3::Dot(ray.direction, plane.normal);
 			if (t >= ray.min && t < ray.max)
 			{
-				hitRecord.materialIndex = plane.materialIndex;
-				hitRecord.t = t;
-				hitRecord.didHit = true;
-				hitRecord.normal = plane.normal;
-				hitRecord.origin = ray.origin + hitRecord.t * ray.direction;
+				if (!ignoreHitRecord)
+				{
+					hitRecord.materialIndex = plane.materialIndex;
+					hitRecord.t = t;
+					hitRecord.didHit = true;
+					hitRecord.normal = plane.normal;
+					hitRecord.origin = ray.origin + hitRecord.t * ray.direction;
+				}
 				return true;
 			}
 			return false;
