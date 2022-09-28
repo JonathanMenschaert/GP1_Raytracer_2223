@@ -122,9 +122,9 @@ namespace dae
 					else
 					{
 						float modifier{ forwardModifier * mouseY };
-						displacement.x += modifier;
-						displacement.y += modifier;
-						displacement.z += modifier;
+						displacement.x += forward.x * modifier;
+						displacement.y += forward.y * modifier;
+						displacement.z += forward.z * modifier;
 					}
 				}
 				if (mouseX != 0.f) {
@@ -138,9 +138,7 @@ namespace dae
 				totalYaw -= mouseX * deltaTime * TO_RADIANS * rotationSpeed * shiftModifier;
 				CalculateForwardVector();
 			}
-			origin.x += displacement.x * forward.x;
-			origin.y += displacement.y * forward.y;
-			origin.z += displacement.z * forward.z;
+			origin += displacement;
 			//todo: W2
 			//assert(false && "Not Implemented Yet");
 		}
