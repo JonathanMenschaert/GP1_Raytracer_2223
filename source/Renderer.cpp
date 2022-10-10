@@ -45,18 +45,23 @@ void Renderer::Render(Scene* pScene) const
 			pScene->GetClosestHit(viewRay, closestHit);
 			if (closestHit.didHit)
 			{
-				finalColor = materials[closestHit.materialIndex]->Shade();
+				//finalColor = materials[closestHit.materialIndex]->Shade();
 				for (size_t idx{}; idx < lights.size(); ++idx)
 				{
-					/*Vector3 lightDirection{ LightUtils::GetDirectionToLight(lights[idx], closestHit.origin) };
-					float magnitude{ lightDirection.Normalize() };*/
+					Vector3 lightDirection{ LightUtils::GetDirectionToLight(lights[idx], closestHit.origin) };
+					float magnitude{ lightDirection.Normalize() };
 
 					/*Ray lightRay{ closestHit.origin, lightDirection, 0.0001f, magnitude };
 					if (pScene->DoesHit(lightRay))
 					{
 						finalColor *= 0.5f;
 					}*/
-
+					float dotValue{ Vector3::Dot(closestHit.normal, lightDirection) };
+					if (dotValue >= 0.f)
+					{
+						finalColor += LightUtils::GetRadiance(lights[idx], closestHit.origin) * 
+							materials[closestHit.materialIndex]->Shade() * dotValue;
+					}
 				}
 			}
 			//Update Color in Buffer
