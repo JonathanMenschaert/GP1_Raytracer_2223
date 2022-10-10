@@ -45,7 +45,7 @@ int main(int argc, char* args[])
 	const auto pTimer = new Timer();
 	const auto pRenderer = new Renderer(pWindow);
 
-	const auto pScene = new Scene_W3_TestScene();
+	const auto pScene = new Scene_W2();
 	pScene->Initialize();
 
 	//Start loop
@@ -68,6 +68,11 @@ int main(int argc, char* args[])
 				if(e.key.keysym.scancode == SDL_SCANCODE_X)
 					takeScreenshot = true;
 				break;
+			case SDLK_F3:
+				pRenderer->CycleLightingMode();
+				break;
+			case SDLK_F2:
+				pRenderer->ToggleShadows();
 			}
 		}
 

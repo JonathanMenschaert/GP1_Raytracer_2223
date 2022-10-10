@@ -29,17 +29,26 @@ namespace dae
 		Vector3 up{Vector3::UnitY};
 		Vector3 right{Vector3::UnitX};
 
+		bool forwardChanged = true;
+
 		float totalPitch{0.f};
 		float totalYaw{0.f};
+
+		const float minFov {10.f};
+		const float maxFov {175.f};
 
 		Matrix cameraToWorld{};
 
 		//Change to support reference
 		Matrix CalculateCameraToWorld()
 		{
-			right = Vector3::Cross(Vector3::UnitY, forward).Normalized();
-			up = Vector3::Cross(forward, right).Normalized();
-			cameraToWorld = {right, up, forward, origin};
+			if (forwardChanged)
+			{
+				right = Vector3::Cross(Vector3::UnitY, forward).Normalized();
+				up = Vector3::Cross(forward, right).Normalized();
+				cameraToWorld = { right, up, forward, origin };
+				forwardChanged = false;
+			}
 			return cameraToWorld;
 		}
 
@@ -54,6 +63,7 @@ namespace dae
 			const Matrix finalRotation = Matrix::CreateRotation({ totalPitch, totalYaw, 0.f });
 			forward = finalRotation.TransformVector(Vector3::UnitZ);
 			forward.Normalize();
+			forwardChanged = true;
 		}
 
 		void Update(Timer* pTimer)
@@ -62,7 +72,6 @@ namespace dae
 			const float linearSpeed{ 4.f };
 			const float rotationSpeed{ 10.f };
 			float shiftModifier{ 1.f };
-			float forwardModifier{ deltaTime * linearSpeed * shiftModifier };
 			Vector3 displacement{};
 
 			//Keyboard Input
@@ -75,43 +84,46 @@ namespace dae
 
 			if (pKeyboardState[SDL_SCANCODE_LEFT])
 			{
-				if (fovAngle > 10.f)
+				if (fovAngle > minFov)
 				{
 					SetCameraFOV(fovAngle - 1);
 				}
 			}
 			else if (pKeyboardState[SDL_SCANCODE_RIGHT])
 			{
-				if (fovAngle < 178.f)
+				if (fovAngle < maxFov)
 				{
 					SetCameraFOV(fovAngle + 1);
 				}
 			}
-			
-			if (pKeyboardState[SDL_SCANCODE_W])
-			{
-				displacement.z += forwardModifier;
-			}
-			if (pKeyboardState[SDL_SCANCODE_S])
-			{
-				displacement.z += -forwardModifier;
-			}
-			if (pKeyboardState[SDL_SCANCODE_A])
-			{
-				displacement.x += -forwardModifier;
-			}
-			if (pKeyboardState[SDL_SCANCODE_D])
-			{
-				displacement.x += forwardModifier;
-			}
+			float speedModifier{ deltaTime * linearSpeed * shiftModifier };
+
+			origin += forward * speedModifier * pKeyboardState[SDL_SCANCODE_W];
+			origin += forward * -speedModifier * pKeyboardState[SDL_SCANCODE_S];
+			origin += right * speedModifier * pKeyboardState[SDL_SCANCODE_D];
+			origin += right * -speedModifier * pKeyboardState[SDL_SCANCODE_A];
 
 			//Mouse Input
 			int mouseX{}, mouseY{};
 			const uint32_t mouseState = SDL_GetRelativeMouseState(&mouseX, &mouseY);
+			float rotationModifier{ deltaTime * rotationSpeed * shiftModifier };			
 			
-			if ((mouseState & SDL_BUTTON(1)) )
+			if (mouseY != 0.f || mouseX != 0.f)
 			{
-				
+				origin += forward * speedModifier * (mouseState == SDL_BUTTON_LMASK) * static_cast<float>(mouseY);
+				origin += Vector3::UnitY * speedModifier * (mouseState == (SDL_BUTTON_RMASK | SDL_BUTTON_LMASK)) * static_cast<float>(mouseY);
+				totalPitch += static_cast<float>(mouseY) * TO_RADIANS * (mouseState == SDL_BUTTON_RMASK) * rotationModifier;
+				totalYaw += static_cast<float>(-mouseX) * TO_RADIANS *
+					(mouseState & SDL_BUTTON_LMASK || mouseState & SDL_BUTTON_RMASK) * rotationModifier;
+				CalculateForwardVector();
+			}
+		}
+	};
+}
+
+/*if ((mouseState & SDL_BUTTON(1)) )
+			{
+
 				if (mouseY != 0.f)
 				{
 					if (mouseState & SDL_BUTTON(3))
@@ -120,7 +132,7 @@ namespace dae
 					}
 					else
 					{
-						float modifier{ forwardModifier * mouseY };
+						float modifier{ speedModifier * mouseY };
 						displacement.x += forward.x * modifier;
 						displacement.y += forward.y * modifier;
 						displacement.z += forward.z * modifier;
@@ -136,10 +148,4 @@ namespace dae
 				totalPitch += mouseY * deltaTime * TO_RADIANS * rotationSpeed * shiftModifier;
 				totalYaw -= mouseX * deltaTime * TO_RADIANS * rotationSpeed * shiftModifier;
 				CalculateForwardVector();
-			}
-			origin += displacement;
-			//todo: W2
-			//assert(false && "Not Implemented Yet");
-		}
-	};
-}
+			}*/

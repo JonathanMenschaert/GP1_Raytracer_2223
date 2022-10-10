@@ -45,7 +45,7 @@ void Renderer::Render(Scene* pScene) const
 			pScene->GetClosestHit(viewRay, closestHit);
 			if (closestHit.didHit)
 			{
-				//finalColor = materials[closestHit.materialIndex]->Shade();
+				finalColor = materials[closestHit.materialIndex]->Shade();
 				for (size_t idx{}; idx < lights.size(); ++idx)
 				{
 					Vector3 lightDirection{ LightUtils::GetDirectionToLight(lights[idx], closestHit.origin) };
@@ -56,12 +56,11 @@ void Renderer::Render(Scene* pScene) const
 					{
 						finalColor *= 0.5f;
 					}*/
-					float dotValue{ Vector3::Dot(closestHit.normal, lightDirection) };
-					if (dotValue >= 0.f)
-					{
-						finalColor += LightUtils::GetRadiance(lights[idx], closestHit.origin) * 
-							materials[closestHit.materialIndex]->Shade() * dotValue;
-					}
+					float observedArea{ Vector3::Dot(closestHit.normal, lightDirection) };
+					if (observedArea < 0) continue;					
+					finalColor += LightUtils::GetRadiance(lights[idx], closestHit.origin) * 
+						materials[closestHit.materialIndex]->Shade() * observedArea;
+					
 				}
 			}
 			//Update Color in Buffer
@@ -82,4 +81,10 @@ void Renderer::Render(Scene* pScene) const
 bool Renderer::SaveBufferToImage() const
 {
 	return SDL_SaveBMP(m_pBuffer, "RayTracing_Buffer.bmp");
+}
+
+void dae::Renderer::CycleLightingMode()
+{
+	m_CurrentLightingMode = static_cast<LightingMode>((static_cast<int>(m_CurrentLightingMode) + 1) % 
+		static_cast<int>(LightingMode::Count));
 }

@@ -122,6 +122,8 @@ namespace dae
 				return { light.origin - origin };
 			case LightType::Directional:
 				return {  FLT_MAX * (light.origin - origin) };
+			default:
+				return Vector3{};
 			}
 		}
 
@@ -133,6 +135,8 @@ namespace dae
 				return { light.color * (light.intensity / (light.origin - target).SqrMagnitude())};
 			case LightType::Directional:
 				return { light.color * light.intensity};
+			default:
+				return ColorRGB{};
 			}
 		}
 	}
