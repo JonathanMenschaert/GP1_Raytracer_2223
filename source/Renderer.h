@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <iostream>
 
 struct SDL_Window;
 struct SDL_Surface;
@@ -8,6 +9,7 @@ struct SDL_Surface;
 namespace dae
 {
 	class Scene;
+	class Timer;
 
 	class Renderer final
 	{
@@ -21,10 +23,15 @@ namespace dae
 		Renderer& operator=(Renderer&&) noexcept = delete;
 
 		void Render(Scene* pScene) const;
+		void Update(dae::Timer* pTimer);
+
 		bool SaveBufferToImage() const;
 
 		void CycleLightingMode();
-		void ToggleShadows() { m_ShadowsEnabled = !m_ShadowsEnabled; }
+		void ToggleShadows() { 
+			m_ShadowsEnabled = !m_ShadowsEnabled; 
+			std::cout << "shadows toggled" << "\n";
+		}
 
 	private:
 

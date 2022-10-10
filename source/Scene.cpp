@@ -201,7 +201,7 @@ namespace dae {
 
 		//Materials
 		const auto matLambert_Red = AddMaterial(new Material_Lambert(colors::Red, 1.f));
-		const auto matLambert_Blue = AddMaterial(new Material_Lambert( colors::Blue, 1.f));
+		const auto matLambertPhong_Blue = AddMaterial(new Material_LambertPhong( colors::Blue, 1.f, 1.f, 1.f));
 		const auto matLambert_Yellow = AddMaterial(new Material_Lambert( colors::Yellow, 1.f));
 
 		//Plane
@@ -209,7 +209,7 @@ namespace dae {
 
 		//Spheres
 		AddSphere({ -0.75f, 1.f, 0.f }, 1.f, matLambert_Red);
-		AddSphere({ 0.75f, 1.f, 0.f }, 1.f, matLambert_Blue);
+		AddSphere({ 0.75f, 1.f, 0.f }, 1.f, matLambertPhong_Blue);
 
 		//Light
 		AddPointLight({ 0.f, 5.f, 5.f }, 25.f, colors::White);
@@ -231,6 +231,10 @@ namespace dae {
 
 		const auto matLambert_GrayBlue = AddMaterial(new Material_Lambert({ 0.49f, 0.57f, 0.57f }, 1.f));
 
+		const auto matLambertPhong1 = AddMaterial(new Material_LambertPhong(colors::Blue, 0.5f, 0.5f, 3.f));
+		const auto matLambertPhong2 = AddMaterial(new Material_LambertPhong(colors::Blue, 0.5f, 0.5f, 15.f));
+		const auto matLambertPhong3 = AddMaterial(new Material_LambertPhong(colors::Blue, 0.5f, 0.5f, 30.f));
+
 		//Plane
 		AddPlane({ 0.f, 0.f, 10.f }, { 0.f, 0.f, -1.f }, matLambert_GrayBlue);
 		AddPlane({ 0.f, 0.f, 0.f }, { 0.f, 1.f, 0.f }, matLambert_GrayBlue);
@@ -239,6 +243,9 @@ namespace dae {
 		AddPlane({ -5.f, 0.f, 0.f }, { 1.f, 0.f, 0.f }, matLambert_GrayBlue);
 
 		//Spheres
+		/*AddSphere({ -1.75, 1.f, 0.f }, 0.75f, matLambertPhong1);
+		AddSphere({ 0.f, 1.f, 0.f }, 0.75f, matLambertPhong2);
+		AddSphere({ 1.75, 1.f, 0.f }, 0.75f, matLambertPhong3);*/
 		AddSphere({ -1.75, 1.f, 0.f }, 0.75f, matCT_GrayRoughMetal);
 		AddSphere({ 0.f, 1.f, 0.f }, 0.75f, matCT_GrayMediumMetal);
 		AddSphere({ 1.75, 1.f, 0.f }, 0.75f, matCT_GraySmoothMetal);

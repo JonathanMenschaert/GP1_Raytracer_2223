@@ -45,22 +45,37 @@ void Renderer::Render(Scene* pScene) const
 			pScene->GetClosestHit(viewRay, closestHit);
 			if (closestHit.didHit)
 			{
-				finalColor = materials[closestHit.materialIndex]->Shade();
+				//finalColor = materials[closestHit.materialIndex]->Shade();
 				for (size_t idx{}; idx < lights.size(); ++idx)
 				{
 					Vector3 lightDirection{ LightUtils::GetDirectionToLight(lights[idx], closestHit.origin) };
 					float magnitude{ lightDirection.Normalize() };
+					Ray lightRay{ closestHit.origin, lightDirection, 0.0001f, magnitude };
+					if (pScene->DoesHit(lightRay) && m_ShadowsEnabled) continue;
 
-					/*Ray lightRay{ closestHit.origin, lightDirection, 0.0001f, magnitude };
-					if (pScene->DoesHit(lightRay))
-					{
-						finalColor *= 0.5f;
-					}*/
 					float observedArea{ Vector3::Dot(closestHit.normal, lightDirection) };
-					if (observedArea < 0) continue;					
-					finalColor += LightUtils::GetRadiance(lights[idx], closestHit.origin) * 
-						materials[closestHit.materialIndex]->Shade() * observedArea;
-					
+					if (observedArea < 0 ) continue;					
+							
+					switch (m_CurrentLightingMode)
+					{
+					case LightingMode::Combined:
+						finalColor += LightUtils::GetRadiance(lights[idx], closestHit.origin) *
+							materials[closestHit.materialIndex]->Shade(closestHit, lightDirection, rayDirection) * observedArea;
+						break;
+					case LightingMode::ObservedArea:
+						finalColor += {observedArea, observedArea, observedArea};
+						break;
+					case LightingMode::Radiance:
+						finalColor += LightUtils::GetRadiance(lights[idx], closestHit.origin);
+						break;
+					case LightingMode::BDRF:
+						finalColor += materials[closestHit.materialIndex]->Shade(closestHit, lightDirection, rayDirection);
+						break;
+					default:
+						break;
+					}
+
+
 				}
 			}
 			//Update Color in Buffer
@@ -76,6 +91,19 @@ void Renderer::Render(Scene* pScene) const
 	//@END
 	//Update SDL Surface
 	SDL_UpdateWindowSurface(m_pWindow);
+}
+
+void dae::Renderer::Update(dae::Timer* pTimer)
+{
+	const uint8_t* pKeyboardState = SDL_GetKeyboardState(nullptr);
+	if (pKeyboardState[SDL_SCANCODE_F3])
+	{
+		CycleLightingMode();
+	}
+	if (pKeyboardState[SDL_SCANCODE_F2])
+	{
+		ToggleShadows();
+	}
 }
 
 bool Renderer::SaveBufferToImage() const
