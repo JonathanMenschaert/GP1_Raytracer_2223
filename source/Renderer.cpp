@@ -21,6 +21,7 @@ Renderer::Renderer(SDL_Window * pWindow) :
 	//Initialize
 	SDL_GetWindowSize(pWindow, &m_Width, &m_Height);
 	m_pBufferPixels = static_cast<uint32_t*>(m_pBuffer->pixels);
+	m_AspectRatio = m_Width / static_cast<float>(m_Height);
 }
 
 void Renderer::Render(Scene* pScene) const
@@ -28,31 +29,36 @@ void Renderer::Render(Scene* pScene) const
 	Camera& camera = pScene->GetCamera();
 	auto& materials = pScene->GetMaterials();
 	auto& lights = pScene->GetLights();
-
-	const float ar{ m_Width / static_cast<float>(m_Height) };
 	const Matrix cameraToWorld = camera.CalculateCameraToWorld();
 
 	for (int px{}; px < m_Width; ++px)
 	{
 		for (int py{}; py < m_Height; ++py)
 		{
-			float cx = (2.f * ((px + 0.5f) / m_Width) - 1) * ar * camera.fov;
+			float cx = (2.f * ((px + 0.5f) / m_Width) - 1) * m_AspectRatio * camera.fov;
 			float cy = (1.f - (2.f * (py + 0.5f) / m_Height)) * camera.fov;
-
 			Vector3 rayDirection{cameraToWorld.TransformVector(cx, cy, 1)};
 			rayDirection.Normalize();
-
 			Ray viewRay{ camera.origin,  rayDirection };
-
 			ColorRGB finalColor{};
-
 			HitRecord closestHit{};
 			pScene->GetClosestHit(viewRay, closestHit);
 			if (closestHit.didHit)
 			{
 				finalColor = materials[closestHit.materialIndex]->Shade();
-			}
+				for (size_t idx{}; idx < lights.size(); ++idx)
+				{
+					/*Vector3 lightDirection{ LightUtils::GetDirectionToLight(lights[idx], closestHit.origin) };
+					float magnitude{ lightDirection.Normalize() };*/
 
+					/*Ray lightRay{ closestHit.origin, lightDirection, 0.0001f, magnitude };
+					if (pScene->DoesHit(lightRay))
+					{
+						finalColor *= 0.5f;
+					}*/
+
+				}
+			}
 			//Update Color in Buffer
 			finalColor.MaxToOne();
 

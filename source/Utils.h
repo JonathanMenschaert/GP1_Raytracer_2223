@@ -18,11 +18,11 @@ namespace dae
 			const float b{ Vector3::Dot(2 * ray.direction, originVector) };
 			const float c{ Vector3::Dot(originVector, originVector) - Square(sphere.radius)};
 			
-			float discriminant = Square(b) - 4 * a * c;
+			const float discriminant = Square(b) - 4 * a * c;
 
 			if (discriminant > 0) 
 			{
-				float discriminantSqrt{ sqrt(discriminant) };
+				const float discriminantSqrt{ sqrtf(discriminant) };
 				float t{ (-b - discriminantSqrt) / (2 * a) };
 				if (t < ray.min)
 				{
@@ -116,9 +116,7 @@ namespace dae
 		//Direction from target to light
 		inline Vector3 GetDirectionToLight(const Light& light, const Vector3 origin)
 		{
-			//todo W3
-			assert(false && "No Implemented Yet!");
-			return {};
+			return { light.origin - origin};
 		}
 
 		inline ColorRGB GetRadiance(const Light& light, const Vector3& target)

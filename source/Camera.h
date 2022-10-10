@@ -39,12 +39,11 @@ namespace dae
 		{
 			right = Vector3::Cross(Vector3::UnitY, forward).Normalized();
 			up = Vector3::Cross(forward, right).Normalized();
-
 			cameraToWorld = {right, up, forward, origin};
 			return cameraToWorld;
 		}
 
-		void CalculateCameraFOV(float degrees)
+		void SetCameraFOV(float degrees)
 		{
 			fovAngle = degrees;
 			fov = tanf(degrees * TO_RADIANS / 2.f);
@@ -78,14 +77,14 @@ namespace dae
 			{
 				if (fovAngle > 10.f)
 				{
-					CalculateCameraFOV(fovAngle - 1);
+					SetCameraFOV(fovAngle - 1);
 				}
 			}
 			else if (pKeyboardState[SDL_SCANCODE_RIGHT])
 			{
 				if (fovAngle < 178.f)
 				{
-					CalculateCameraFOV(fovAngle + 1);
+					SetCameraFOV(fovAngle + 1);
 				}
 			}
 			

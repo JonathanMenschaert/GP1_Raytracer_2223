@@ -28,9 +28,10 @@ namespace dae {
 
 	void dae::Scene::GetClosestHit(const Ray& ray, HitRecord& closestHit) const
 	{
+		HitRecord hitRecord{};
 		for (size_t i{}; i < m_SphereGeometries.size(); ++i)
 		{
-			HitRecord hitRecord{};
+			
 			GeometryUtils::HitTest_Sphere(m_SphereGeometries[i], ray, hitRecord);
 			if (hitRecord.t < closestHit.t)
 			{
@@ -40,7 +41,6 @@ namespace dae {
 
 		for (size_t i{}; i < m_PlaneGeometries.size(); ++i)
 		{
-			HitRecord hitRecord{};
 			GeometryUtils::HitTest_Plane(m_PlaneGeometries[i], ray, hitRecord);
 			if (hitRecord.t < closestHit.t)
 			{
@@ -51,8 +51,21 @@ namespace dae {
 
 	bool Scene::DoesHit(const Ray& ray) const
 	{
-		//todo W3
-		assert(false && "No Implemented Yet!");
+		for (size_t i{}; i < m_SphereGeometries.size(); ++i)
+		{			
+			if (GeometryUtils::HitTest_Sphere(m_SphereGeometries[i], ray))
+			{
+				return true;
+			}
+		}
+
+		for (size_t i{}; i < m_PlaneGeometries.size(); ++i)
+		{
+			if (GeometryUtils::HitTest_Plane(m_PlaneGeometries[i], ray))
+			{
+				return true;
+			}
+		}
 		return false;
 	}
 
@@ -149,7 +162,7 @@ namespace dae {
 	void Scene_W2::Initialize()
 	{
 		m_Camera.origin = { 0.f, 3.f, -9.f };
-		m_Camera.CalculateCameraFOV(45.f);
+		m_Camera.SetCameraFOV(45.f);
 
 		//default: Material id0 >> SolidColor Material (Red)
 		constexpr unsigned char matId_Solid_Red = 0;
@@ -175,6 +188,67 @@ namespace dae {
 
 		//Light
 		AddPointLight({ 0.f, 5.f, -5.f }, 70.f, colors::White);
+		//AddPointLight({ 0.f, 5.f, -9.f }, 70.f, colors::White);
+	}
+#pragma endregion
+
+
+#pragma region SCENE W3
+	void Scene_W3_TestScene::Initialize()
+	{
+		m_Camera.origin = { 0.f, 1.f, -5.f };
+		m_Camera.SetCameraFOV(45.f);
+
+		//default: Material id0 >> SolidColor Material (Red)
+		constexpr unsigned char matId_Solid_Red = 0;
+		const unsigned char matId_Solid_Blue = AddMaterial(new Material_SolidColor{ colors::Blue });
+		const unsigned char matId_Solid_Yellow = AddMaterial(new Material_SolidColor{ colors::Yellow });
+
+		//Plane
+		AddPlane({ 0.f, 0.f, 0.f }, { 0.f, 1.f, 0.f }, matId_Solid_Yellow);
+
+		//Spheres
+		AddSphere({ -0.75f, 1.f, 0.f }, 1.f, matId_Solid_Red);
+		AddSphere({ 0.75f, 1.f, 0.f }, 1.f, matId_Solid_Blue);
+
+		//Light
+		AddPointLight({ 0.f, 5.f, 5.f }, 25.f, colors::White);
+	}
+
+	void Scene_W3::Initialize()
+	{
+		m_Camera.origin = { 0.f, 3.f, -9.f };
+		m_Camera.SetCameraFOV(45.f);
+
+		const auto matCT_GrayRoughMetal = AddMaterial(new Material_CookTorrence({ 0.972f, 0.960f, 0.915f }, 1.f, 1.f));
+		const auto matCT_GrayMediumMetal = AddMaterial(new Material_CookTorrence({ 0.972f, 0.960f, 0.915f }, 1.f, 0.6f));
+		const auto matCT_GraySmoothMetal = AddMaterial(new Material_CookTorrence({ 0.972f, 0.960f, 0.915f }, 1.f, 0.1f));
+
+		const auto matCT_GrayRoughPlastic = AddMaterial(new Material_CookTorrence({ 0.75f, 0.75f, 0.75f }, 0.f, 1.f));
+		const auto matCT_GrayMediumPlastic = AddMaterial(new Material_CookTorrence({ 0.75f, 0.75f, 0.75f }, 0.f, 0.6f));
+		const auto matCT_GraySmoothPlastic = AddMaterial(new Material_CookTorrence({ 0.75f, 0.75f, 0.75f }, 0.f, 0.1f));
+
+		const auto matLambert_GrayBlue = AddMaterial(new Material_Lambert({ 0.49f, 0.57f, 0.57f }, 1.f));
+
+		//Plane
+		AddPlane({ 0.f, 0.f, 10.f }, { 0.f, 0.f, -1.f }, matLambert_GrayBlue);
+		AddPlane({ 0.f, 0.f, 0.f }, { 0.f, 1.f, 0.f }, matLambert_GrayBlue);
+		AddPlane({ 0.f, 10.f, 0.f }, { 0.f, -1.f, 0.f }, matLambert_GrayBlue);
+		AddPlane({ 5.f, 0.f, 0.f }, { -1.f, 0.f, 0.f }, matLambert_GrayBlue);
+		AddPlane({ -5.f, 0.f, 0.f }, { 1.f, 0.f, 0.f }, matLambert_GrayBlue);
+
+		//Spheres
+		AddSphere({ -1.75, 1.f, 0.f }, 0.75f, matCT_GrayRoughMetal);
+		AddSphere({ 0.f, 1.f, 0.f }, 0.75f, matCT_GrayMediumMetal);
+		AddSphere({ 1.75, 1.f, 0.f }, 0.75f, matCT_GraySmoothMetal);
+		AddSphere({ -1.75, 3.f, 0.f }, 0.75f, matCT_GrayRoughPlastic);
+		AddSphere({ 0.f, 3.f, 0.f }, 0.75f, matCT_GrayMediumPlastic);
+		AddSphere({ 1.75, 3.f, 0.f }, 0.75f, matCT_GraySmoothPlastic);
+
+		//Light
+		AddPointLight({ 0.f, 5.f, 5.f }, 50.f, ColorRGB{1.f, 0.61f, 0.45f});
+		AddPointLight({ -2.5f, 5.f, -5.f }, 70.f, ColorRGB{ 1.f, 0.8f, 0.45f });
+		AddPointLight({ 2.5f, 2.5f, -5.f }, 50.f, ColorRGB{ 0.34f, 0.47f, 0.68f });
 	}
 #pragma endregion
 }
