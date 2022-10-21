@@ -132,6 +132,7 @@ namespace dae
 			switch (light.type)
 			{
 			case LightType::Point:
+				//Ergb = lightcolor * intensity / (light origin - target)²
 				return { light.color * (light.intensity / (light.origin - target).SqrMagnitude())};
 			case LightType::Directional:
 				return { light.color * light.intensity};

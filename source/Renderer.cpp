@@ -35,48 +35,50 @@ void Renderer::Render(Scene* pScene) const
 	{
 		for (int py{}; py < m_Height; ++py)
 		{
-			float cx = (2.f * ((px + 0.5f) / m_Width) - 1) * m_AspectRatio * camera.fov;
-			float cy = (1.f - (2.f * (py + 0.5f) / m_Height)) * camera.fov;
-			Vector3 rayDirection{cameraToWorld.TransformVector(cx, cy, 1)};
-			rayDirection.Normalize();
-			Ray viewRay{ camera.origin,  rayDirection };
+			const float cx = (2.f * ((px + 0.5f) / m_Width) - 1) * m_AspectRatio * camera.fov;
+			const float cy = (1.f - (2.f * (py + 0.5f) / m_Height)) * camera.fov;
+			Vector3 viewDirection{cameraToWorld.TransformVector(cx, cy, 1)};
+			viewDirection.Normalize();
+			const Ray viewRay{ camera.origin,  viewDirection };
 			ColorRGB finalColor{};
 			HitRecord closestHit{};
 			pScene->GetClosestHit(viewRay, closestHit);
 			if (closestHit.didHit)
 			{
 				//finalColor = materials[closestHit.materialIndex]->Shade();
+				float shadowFactor{ 1.f };
 				for (size_t idx{}; idx < lights.size(); ++idx)
 				{
 					Vector3 lightDirection{ LightUtils::GetDirectionToLight(lights[idx], closestHit.origin) };
-					float magnitude{ lightDirection.Normalize() };
-					Ray lightRay{ closestHit.origin, lightDirection, 0.0001f, magnitude };
-					if (pScene->DoesHit(lightRay) && m_ShadowsEnabled) continue;
-
-					float observedArea{ Vector3::Dot(closestHit.normal, lightDirection) };
-					if (observedArea < 0 ) continue;					
-							
+					const float magnitude{ lightDirection.Normalize() };						
+					const Ray lightRay{ closestHit.origin + closestHit.normal * 0.0001f, lightDirection, 0.0001f, magnitude };
+					if (m_ShadowsEnabled && pScene->DoesHit(lightRay)) {
+						shadowFactor *= 0.95f;
+						continue;
+					}
+					
+					const float observedArea{ std::max(Vector3::Dot(closestHit.normal, lightDirection), 0.f) };
 					switch (m_CurrentLightingMode)
 					{
 					case LightingMode::Combined:
 						finalColor += LightUtils::GetRadiance(lights[idx], closestHit.origin) *
-							materials[closestHit.materialIndex]->Shade(closestHit, lightDirection, rayDirection) * observedArea;
+							materials[closestHit.materialIndex]->Shade(closestHit, lightDirection, -viewDirection) * observedArea;
 						break;
 					case LightingMode::ObservedArea:
-						finalColor += {observedArea, observedArea, observedArea};
+						finalColor += ColorRGB{observedArea, observedArea, observedArea};
+						//std::cout << "observed area: " << observedArea << "\n";
 						break;
 					case LightingMode::Radiance:
 						finalColor += LightUtils::GetRadiance(lights[idx], closestHit.origin);
 						break;
-					case LightingMode::BDRF:
-						finalColor += materials[closestHit.materialIndex]->Shade(closestHit, lightDirection, rayDirection);
+					case LightingMode::BRDF:
+						finalColor += materials[closestHit.materialIndex]->Shade(closestHit, lightDirection, -viewDirection);
 						break;
 					default:
 						break;
 					}
-
-
 				}
+				finalColor *= shadowFactor;
 			}
 			//Update Color in Buffer
 			finalColor.MaxToOne();
@@ -98,11 +100,27 @@ void dae::Renderer::Update(dae::Timer* pTimer)
 	const uint8_t* pKeyboardState = SDL_GetKeyboardState(nullptr);
 	if (pKeyboardState[SDL_SCANCODE_F3])
 	{
-		CycleLightingMode();
+		if (!m_F3Pressed)
+		{
+			CycleLightingMode();
+			m_F3Pressed = true;
+		}		
+	}
+	else 
+	{
+		m_F3Pressed = false;
 	}
 	if (pKeyboardState[SDL_SCANCODE_F2])
 	{
-		ToggleShadows();
+		if (!m_F2Pressed)
+		{
+			ToggleShadows();
+			m_F2Pressed = true;
+		}
+	}
+	else
+	{
+		m_F2Pressed = false;
 	}
 }
 

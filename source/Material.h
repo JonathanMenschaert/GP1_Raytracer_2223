@@ -83,7 +83,7 @@ namespace dae
 		ColorRGB Shade(const HitRecord& hitRecord = {}, const Vector3& l = {}, const Vector3& v = {}) override
 		{
 			return BRDF::Lambert(m_DiffuseReflectance, m_DiffuseColor) +
-				BRDF::Phong(m_SpecularReflectance, m_PhongExponent, l, -v, hitRecord.normal);
+				BRDF::Phong(m_SpecularReflectance, m_PhongExponent, l, v, hitRecord.normal);
 		}
 
 	private:
@@ -106,16 +106,20 @@ namespace dae
 
 		ColorRGB Shade(const HitRecord& hitRecord = {}, const Vector3& l = {}, const Vector3& v = {}) override
 		{
-			Vector3 halfVector{ (-v + l) / (-v + l).Magnitude() };
-			ColorRGB f0{ (m_Metalness == 0.f ? ColorRGB{0.04f, 0.04f, 0.04f} : m_Albedo) };
+			const Vector3 halfVector{ (v + l).Normalized()};
+			const ColorRGB f0{ (m_Metalness == 0.f ? ColorRGB{0.04f, 0.04f, 0.04f} : m_Albedo) };
 
-			ColorRGB fresnel{ BRDF::FresnelFunction_Schlick(halfVector, -v, f0) };
-			float distribution{ BRDF::NormalDistribution_GGX(hitRecord.normal, halfVector, m_Roughness) };			
-			float geometry{ BRDF::GeometryFunction_Smith(hitRecord.normal, -v, l, m_Roughness) };
+			const ColorRGB fresnel{ BRDF::FresnelFunction_Schlick(halfVector, v, f0) };
+			const float distribution{ BRDF::NormalDistribution_GGX(hitRecord.normal, halfVector, m_Roughness) };			
+			const float geometry{ BRDF::GeometryFunction_Smith(hitRecord.normal, v, l, m_Roughness) };
 			
-			//ColorRGB specular{ (fresnel * distribution * geometry) / (4 * Vector3::Dot(-v, hitRecord.normal) * Vector3::Dot(l, hitRecord.normal)) };
-			ColorRGB diffuse{ BRDF::Lambert((m_Metalness == 0.f ? fresnel : ColorRGB{}), m_Albedo) };
-			return diffuse;
+			const ColorRGB specular{ ColorRGB(fresnel * distribution * geometry) / (4 * std::max(Vector3::Dot(v, hitRecord.normal), 0.0001f) * std::max(Vector3::Dot(l, hitRecord.normal), 0.0001f)) };
+			const ColorRGB diffuse{ BRDF::Lambert((m_Metalness == 0.f ? ColorRGB{1, 1, 1} - fresnel : ColorRGB{}), m_Albedo) };
+			
+			
+
+			//return ColorRGB{1, 1, 1} * distribution;
+			return diffuse + specular;
 		}
 
 	private:

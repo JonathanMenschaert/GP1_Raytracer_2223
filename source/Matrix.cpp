@@ -146,7 +146,7 @@ namespace dae {
 	Matrix Matrix::CreateRotation(const Vector3& r)
 	{
 
-		return CreateRotationZ(r[2]) * CreateRotationY(r[1]) * CreateRotationX(r[0]);
+		return CreateRotationX(r[0]) * CreateRotationY(r[1]) * CreateRotationZ(r[2]);
 	}
 
 	Matrix Matrix::CreateRotation(float pitch, float yaw, float roll)

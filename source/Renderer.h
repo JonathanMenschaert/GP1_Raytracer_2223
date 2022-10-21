@@ -30,7 +30,6 @@ namespace dae
 		void CycleLightingMode();
 		void ToggleShadows() { 
 			m_ShadowsEnabled = !m_ShadowsEnabled; 
-			std::cout << "shadows toggled" << "\n";
 		}
 
 	private:
@@ -39,13 +38,15 @@ namespace dae
 		{
 			ObservedArea,
 			Radiance,
-			BDRF,
+			BRDF,
 			Combined,
 			//Define modes above
 			Count
 		};
 		LightingMode m_CurrentLightingMode{ LightingMode::Combined };
 		bool m_ShadowsEnabled{ true };
+		bool m_F3Pressed{ false };
+		bool m_F2Pressed{ false };
 
 		SDL_Window* m_pWindow{};
 

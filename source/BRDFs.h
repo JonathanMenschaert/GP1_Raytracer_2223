@@ -13,12 +13,12 @@ namespace dae
 		 */
 		static ColorRGB Lambert(float kd, const ColorRGB& cd)
 		{
-			return (kd * cd) / PI;
+			return (cd * kd) / PI;
 		}
 
 		static ColorRGB Lambert(const ColorRGB& kd, const ColorRGB& cd)
 		{
-			return (kd * cd) / PI;
+			return (cd * kd) / PI;
 		}
 
 		/**
@@ -35,7 +35,8 @@ namespace dae
 			Vector3 reflect{ l - 2 * Vector3::Dot(n, l) * n };
 			float cosa = Vector3::Dot(reflect, v);
 			float specularReflection{ ks * powf(cosa, exp) };
-			return colors::White * specularReflection;
+			specularReflection = std::max(specularReflection, 0.f);
+			return ColorRGB{1, 1, 1} * specularReflection;
 		}
 
 		/**
@@ -48,7 +49,7 @@ namespace dae
 		static ColorRGB FresnelFunction_Schlick(const Vector3& h, const Vector3& v, const ColorRGB& f0)
 		{
 			
-			return f0 + (colors::White - f0) * powf(1 - Vector3::Dot(h, v), 5);
+			return f0 + ((ColorRGB{1, 1, 1} - f0) * powf(1 - std::max(Vector3::Dot(h, v), 0.f), 5));
 		}
 
 		/**
@@ -60,8 +61,9 @@ namespace dae
 		 */
 		static float NormalDistribution_GGX(const Vector3& n, const Vector3& h, float roughness)
 		{
-			roughness = Square(roughness);
-			return Square(roughness) / (PI * Square(Square(Vector3::Dot(n, h)) * (Square(roughness) - 1) + 1));
+			float a{ Square(roughness) };
+			float sqrA{ Square(a) };
+			return sqrA / (PI * Square(Square(std::max(Vector3::Dot(n, h), 0.f)) * (Square(a) - 1) + 1));
 		}
 
 
@@ -74,9 +76,11 @@ namespace dae
 		 */
 		static float GeometryFunction_SchlickGGX(const Vector3& n, const Vector3& v, float roughness)
 		{
-			roughness = Square(roughness);
-			float k{ Square(roughness + 1) / 8 };
-			return Vector3::Dot(n, v) / (Vector3::Dot(n, v) * (1 - k) + k);
+			float a{ Square(roughness) };
+			float k{ Square(a + 1) / 8 };
+			float clampedDot{ std::max(Vector3::Dot(n, v), 0.f) };
+			float geometry{ clampedDot / ((clampedDot * (1 - k)) + k) };
+			return geometry;
 		}
 
 		/**

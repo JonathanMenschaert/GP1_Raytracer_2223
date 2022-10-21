@@ -113,7 +113,7 @@ namespace dae
 				origin += forward * speedModifier * (mouseState == SDL_BUTTON_LMASK) * static_cast<float>(mouseY);
 				origin += Vector3::UnitY * speedModifier * (mouseState == (SDL_BUTTON_RMASK | SDL_BUTTON_LMASK)) * static_cast<float>(mouseY);
 				totalPitch += static_cast<float>(mouseY) * TO_RADIANS * (mouseState == SDL_BUTTON_RMASK) * rotationModifier;
-				totalYaw += static_cast<float>(-mouseX) * TO_RADIANS *
+				totalYaw += static_cast<float>(mouseX) * TO_RADIANS *
 					(mouseState & SDL_BUTTON_LMASK || mouseState & SDL_BUTTON_RMASK) * rotationModifier;
 				CalculateForwardVector();
 			}
@@ -121,31 +121,3 @@ namespace dae
 	};
 }
 
-/*if ((mouseState & SDL_BUTTON(1)) )
-			{
-
-				if (mouseY != 0.f)
-				{
-					if (mouseState & SDL_BUTTON(3))
-					{
-						origin.y += mouseY * deltaTime * linearSpeed * shiftModifier;
-					}
-					else
-					{
-						float modifier{ speedModifier * mouseY };
-						displacement.x += forward.x * modifier;
-						displacement.y += forward.y * modifier;
-						displacement.z += forward.z * modifier;
-					}
-				}
-				if (mouseX != 0.f) {
-					totalYaw -= mouseX * deltaTime * TO_RADIANS * rotationSpeed * shiftModifier;
-					CalculateForwardVector();
-				}
-			}
-			else if ((mouseState & SDL_BUTTON(3)))
-			{
-				totalPitch += mouseY * deltaTime * TO_RADIANS * rotationSpeed * shiftModifier;
-				totalYaw -= mouseX * deltaTime * TO_RADIANS * rotationSpeed * shiftModifier;
-				CalculateForwardVector();
-			}*/

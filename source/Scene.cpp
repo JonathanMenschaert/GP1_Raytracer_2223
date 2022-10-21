@@ -201,7 +201,7 @@ namespace dae {
 
 		//Materials
 		const auto matLambert_Red = AddMaterial(new Material_Lambert(colors::Red, 1.f));
-		const auto matLambertPhong_Blue = AddMaterial(new Material_LambertPhong( colors::Blue, 1.f, 1.f, 1.f));
+		const auto matLambertPhong_Blue = AddMaterial(new Material_LambertPhong( colors::Blue, 1.f, 1.f, 60.f));
 		const auto matLambert_Yellow = AddMaterial(new Material_Lambert( colors::Yellow, 1.f));
 
 		//Plane
