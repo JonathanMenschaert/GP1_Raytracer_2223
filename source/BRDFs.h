@@ -32,7 +32,7 @@ namespace dae
 		 */
 		static ColorRGB Phong(float ks, float exp, const Vector3& l, const Vector3& v, const Vector3& n)
 		{
-			Vector3 reflect{ l - 2 * Vector3::Dot(n, l) * n };
+			Vector3 reflect{ l - 2 * std::max(Vector3::Dot(n, l), 0.f) * n };
 			float cosa = Vector3::Dot(reflect, v);
 			float specularReflection{ ks * powf(cosa, exp) };
 			specularReflection = std::max(specularReflection, 0.f);

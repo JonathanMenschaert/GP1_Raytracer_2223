@@ -123,20 +123,40 @@ namespace dae
 
 		void CalculateNormals()
 		{
-			
+			normals.resize(indices.size() / 3);
+			const size_t idxIncr{ 3 };
+			for (size_t idx{}; idx < indices.size(); idx += idxIncr)
+			{
+				size_t startIdx{ idx };
+				const Vector3 v0{ positions[static_cast<size_t>(indices[startIdx])] };
+				const Vector3 v1{ positions[static_cast<size_t>(indices[++startIdx])] };
+				const Vector3 v2{ positions[static_cast<size_t>(indices[++startIdx])] };
+
+				Vector3 edgeA{ v1 - v0 };
+				Vector3 edgeB{ v2 - v0 };
+
+				normals[idx / idxIncr] = Vector3::Cross(edgeA, edgeB);
+			}
 		}
 
 		void UpdateTransforms()
 		{
-			assert(false && "No Implemented Yet!");
 			//Calculate Final Transform 
-			//const auto finalTransform = ...
+			const auto finalTransform = scaleTransform * rotationTransform * translationTransform;			
 
 			//Transform Positions (positions > transformedPositions)
-			//...
+			transformedPositions.resize(positions.size());
+			for (size_t idx{}; idx < transformedPositions.size(); ++idx)
+			{
+				transformedPositions[idx] = finalTransform.TransformPoint(positions[idx]);
+			}
 
 			//Transform Normals (normals > transformedNormals)
-			//...
+			transformedNormals.resize(normals.size());
+			for (size_t idx{}; idx < transformedNormals.size(); ++idx)
+			{
+				transformedNormals[idx] = finalTransform.TransformVector(normals[idx]);
+			}
 		}
 	};
 #pragma endregion

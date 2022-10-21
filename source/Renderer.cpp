@@ -50,6 +50,7 @@ void Renderer::Render(Scene* pScene) const
 				for (size_t idx{}; idx < lights.size(); ++idx)
 				{
 					Vector3 lightDirection{ LightUtils::GetDirectionToLight(lights[idx], closestHit.origin) };
+					
 					const float magnitude{ lightDirection.Normalize() };						
 					const Ray lightRay{ closestHit.origin + closestHit.normal * 0.0001f, lightDirection, 0.0001f, magnitude };
 					if (m_ShadowsEnabled && pScene->DoesHit(lightRay)) {

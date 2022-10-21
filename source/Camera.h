@@ -54,8 +54,8 @@ namespace dae
 
 		void SetCameraFOV(float degrees)
 		{
-			fovAngle = degrees;
-			fov = tanf(degrees * TO_RADIANS / 2.f);
+			fovAngle = std::max(minFov, std::min(degrees, maxFov));
+			fov = tanf(fovAngle * TO_RADIANS / 2.f);
 		}
 
 		void CalculateForwardVector()
@@ -76,26 +76,10 @@ namespace dae
 
 			//Keyboard Input
 			const uint8_t* pKeyboardState = SDL_GetKeyboardState(nullptr);
-
-			if (pKeyboardState[SDL_SCANCODE_LSHIFT] || pKeyboardState[SDL_SCANCODE_RSHIFT])
-			{
-				shiftModifier = 4.f;
-			}
-
-			if (pKeyboardState[SDL_SCANCODE_LEFT])
-			{
-				if (fovAngle > minFov)
-				{
-					SetCameraFOV(fovAngle - 1);
-				}
-			}
-			else if (pKeyboardState[SDL_SCANCODE_RIGHT])
-			{
-				if (fovAngle < maxFov)
-				{
-					SetCameraFOV(fovAngle + 1);
-				}
-			}
+			
+			shiftModifier = 4.f * pKeyboardState[SDL_SCANCODE_LSHIFT] + 1.f * !pKeyboardState[SDL_SCANCODE_LSHIFT];
+			SetCameraFOV(fovAngle - pKeyboardState[SDL_SCANCODE_LEFT] + pKeyboardState[SDL_SCANCODE_RIGHT]);
+			
 			float speedModifier{ deltaTime * linearSpeed * shiftModifier };
 
 			origin += forward * speedModifier * pKeyboardState[SDL_SCANCODE_W];

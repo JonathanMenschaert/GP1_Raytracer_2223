@@ -84,20 +84,20 @@ namespace dae
 		//TRIANGLE HIT-TESTS
 		inline bool HitTest_Triangle(const Triangle& triangle, const Ray& ray, HitRecord& hitRecord, bool ignoreHitRecord = false)
 		{
-			if (Vector3::Dot(triangle.normal, ray.direction) == 0.f) return false;
+			const float cullDot{ Vector3::Dot(triangle.normal, ray.direction) };
+			if (std::abs(cullDot) < FLT_EPSILON) return false;
 			switch (triangle.cullMode)
 			{
 			case TriangleCullMode::FrontFaceCulling:
 			{
-				const float cullCheck{ Vector3::Dot(triangle.normal, ray.direction) };
-				const float cullResult{ cullCheck * !ignoreHitRecord - cullCheck * ignoreHitRecord };
+				
+				const float cullResult{ cullDot * !ignoreHitRecord - cullDot * ignoreHitRecord };
 				if (cullResult < 0.f) return false;
 			}
 			break;
 			case TriangleCullMode::BackFaceCulling:
 			{
-				const float cullCheck{ Vector3::Dot(triangle.normal, ray.direction) };
-				const float cullResult{ cullCheck * !ignoreHitRecord - cullCheck * ignoreHitRecord };
+				const float cullResult{ cullDot * !ignoreHitRecord - cullDot * ignoreHitRecord };
 				if (cullResult > 0.f) return false;
 			}
 			break;
@@ -107,35 +107,35 @@ namespace dae
 				break;
 			}
 
-			const Vector3 center{ (triangle.v0 + triangle.v1 + triangle.v2) / 3 };
+			const Vector3 center{ (triangle.v0 + triangle.v1 + triangle.v2) / 3.f };
 			const Vector3 l{ center - ray.origin };
 			const float t{ Vector3::Dot(l, triangle.normal) / Vector3::Dot(ray.direction, triangle.normal) };
 			if (t < ray.min || t > ray.max) return false;
 
-			const Vector3 intersectionPlane{ ray.origin + t * ray.direction };
+			const Vector3 intersectionPoint{ ray.origin + t * ray.direction };
 
 			Vector3 edge{ triangle.v1 - triangle.v0 };
-			Vector3 pointToSide{ intersectionPlane - triangle.v0 };
+			Vector3 pointToSide{ intersectionPoint - triangle.v0 };
 
 			if (Vector3::Dot(triangle.normal, Vector3::Cross(edge, pointToSide)) < 0) return false;
 
 			edge = triangle.v2 - triangle.v1;
-			pointToSide = intersectionPlane - triangle.v1;
+			pointToSide = intersectionPoint - triangle.v1;
 
 			if (Vector3::Dot(triangle.normal, Vector3::Cross(edge, pointToSide)) < 0) return false;
 
 			edge = triangle.v0 - triangle.v2;
-			pointToSide = intersectionPlane - triangle.v2;
+			pointToSide = intersectionPoint - triangle.v2;
 
 			if (Vector3::Dot(triangle.normal, Vector3::Cross(edge, pointToSide)) < 0) return false;
-
+			
 			if (!ignoreHitRecord)
 			{
 				hitRecord.materialIndex = triangle.materialIndex;
 				hitRecord.t = t;
 				hitRecord.didHit = true;
 				hitRecord.normal = triangle.normal;
-				hitRecord.origin = intersectionPlane;
+				hitRecord.origin = intersectionPoint;
 			}
 
 			return true;
@@ -150,9 +150,32 @@ namespace dae
 #pragma region TriangeMesh HitTest
 		inline bool HitTest_TriangleMesh(const TriangleMesh& mesh, const Ray& ray, HitRecord& hitRecord, bool ignoreHitRecord = false)
 		{
-			//todo W5
-			assert(false && "No Implemented Yet!");
-			return false;
+			const size_t idxIncr{ 3 };
+			HitRecord closestHit{};
+			bool didHit{ };
+			Triangle triangle{};
+			triangle.materialIndex = mesh.materialIndex;
+			triangle.cullMode = mesh.cullMode;
+			for (size_t idx{}; idx < mesh.indices.size(); idx += idxIncr)
+			{
+				size_t startIdx{ idx };
+				triangle.v0 = mesh.transformedPositions[static_cast<size_t>(mesh.indices[startIdx])];
+				triangle.v1 = mesh.transformedPositions[static_cast<size_t>(mesh.indices[++startIdx])];
+				triangle.v2 = mesh.transformedPositions[static_cast<size_t>(mesh.indices[++startIdx])];
+				triangle.normal = mesh.transformedNormals[idx / idxIncr];
+				
+				
+				if (HitTest_Triangle(triangle, ray, closestHit, ignoreHitRecord)) 
+				{
+					if (ignoreHitRecord) return true;
+					if (closestHit.t < hitRecord.t)
+					{
+						hitRecord = closestHit;
+					}
+					didHit = true;
+				}				
+			}
+			return didHit;
 		}
 
 		inline bool HitTest_TriangleMesh(const TriangleMesh& mesh, const Ray& ray)
