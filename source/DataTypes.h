@@ -135,7 +135,7 @@ namespace dae
 				Vector3 edgeA{ v1 - v0 };
 				Vector3 edgeB{ v2 - v0 };
 
-				normals[idx / idxIncr] = Vector3::Cross(edgeA, edgeB);
+				normals[idx / idxIncr] = Vector3::Cross(edgeA, edgeB).Normalized();
 			}
 		}
 

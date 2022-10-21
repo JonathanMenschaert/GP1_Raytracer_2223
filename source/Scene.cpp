@@ -303,7 +303,7 @@ namespace dae {
 
 		//TriangleMesh
 		m_pMesh = AddTriangleMesh(TriangleCullMode::BackFaceCulling, matLambert_White);
-		Utils::ParseOBJ("Resources/simple_cube.obj", m_pMesh->positions, m_pMesh->normals, m_pMesh->indices);
+		Utils::ParseOBJ("Resources/simple_object.obj", m_pMesh->positions, m_pMesh->normals, m_pMesh->indices);
 		m_pMesh->Scale({ 0.7f, 0.7f, 0.7f });
 		m_pMesh->Translate({ 0.f, 1.0f, 0.f });
 		m_pMesh->UpdateTransforms();
@@ -399,7 +399,7 @@ namespace dae {
 		m_Camera.SetCameraFOV(45.f);
 
 		const auto matLambert_GrayBlue = AddMaterial(new Material_Lambert({ 0.49f, 0.57f, 0.57f }, 1.f));
-		const auto matLambert_White = AddMaterial(new Material_Lambert(colors::Gray, 1.f));
+		const auto matLambert_White = AddMaterial(new Material_Lambert(colors::White, 1.f));
 
 		//TriangleMesh
 		m_pMesh = AddTriangleMesh(TriangleCullMode::BackFaceCulling, matLambert_White);
@@ -422,5 +422,11 @@ namespace dae {
 		AddPointLight({ -2.5f, 5.f, -5.f }, 70.f, ColorRGB{ 1.f, 0.8f, 0.45f });
 		AddPointLight({ 2.5f, 2.5f, -5.f }, 50.f, ColorRGB{ 0.34f, 0.47f, 0.68f });
 	}
+	/*void Scene_W4_BunnyScene::Update(Timer* pTimer)
+	{
+		Scene::Update(pTimer);
+		m_pMesh->RotateY(PI_DIV_2 * pTimer->GetTotal());
+		m_pMesh->UpdateTransforms();
+	}*/
 #pragma endregion
 }

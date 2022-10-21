@@ -43,22 +43,24 @@ void Renderer::Render(Scene* pScene) const
 			ColorRGB finalColor{};
 			HitRecord closestHit{};
 			pScene->GetClosestHit(viewRay, closestHit);
+			float shadowFactor{ 1.f };
 			if (closestHit.didHit)
 			{
 				//finalColor = materials[closestHit.materialIndex]->Shade();
-				float shadowFactor{ 1.f };
+				
 				for (size_t idx{}; idx < lights.size(); ++idx)
 				{
 					Vector3 lightDirection{ LightUtils::GetDirectionToLight(lights[idx], closestHit.origin) };
 					
 					const float magnitude{ lightDirection.Normalize() };						
-					const Ray lightRay{ closestHit.origin + closestHit.normal * 0.0001f, lightDirection, 0.0001f, magnitude };
-					if (m_ShadowsEnabled && pScene->DoesHit(lightRay)) {
-						shadowFactor *= 0.95f;
-						continue;
+					if (m_ShadowsEnabled)
+					{
+						const Ray lightRay{ closestHit.origin + closestHit.normal * 0.0001f, lightDirection, 0.0001f, magnitude };
+						if (pScene->DoesHit(lightRay)) {
+							shadowFactor *= 0.95f;
+						}
 					}
-					
-					const float observedArea{ std::max(Vector3::Dot(closestHit.normal, lightDirection), 0.f) };
+					const float observedArea{ std::max(Vector3::Dot(closestHit.normal, lightDirection), 0.f)};
 					switch (m_CurrentLightingMode)
 					{
 					case LightingMode::Combined:
@@ -79,11 +81,11 @@ void Renderer::Render(Scene* pScene) const
 						break;
 					}
 				}
-				finalColor *= shadowFactor;
+				
 			}
 			//Update Color in Buffer
 			finalColor.MaxToOne();
-
+			finalColor *= shadowFactor;
 			m_pBufferPixels[px + (py * m_Width)] = SDL_MapRGB(m_pBuffer->format,
 				static_cast<uint8_t>(finalColor.r * 255),
 				static_cast<uint8_t>(finalColor.g * 255),
