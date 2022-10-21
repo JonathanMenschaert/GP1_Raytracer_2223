@@ -84,9 +84,61 @@ namespace dae
 		//TRIANGLE HIT-TESTS
 		inline bool HitTest_Triangle(const Triangle& triangle, const Ray& ray, HitRecord& hitRecord, bool ignoreHitRecord = false)
 		{
-			//todo W5
-			assert(false && "No Implemented Yet!");
-			return false;
+			if (Vector3::Dot(triangle.normal, ray.direction) == 0.f) return false;
+			switch (triangle.cullMode)
+			{
+			case TriangleCullMode::FrontFaceCulling:
+			{
+				const float cullCheck{ Vector3::Dot(triangle.normal, ray.direction) };
+				const float cullResult{ cullCheck * !ignoreHitRecord - cullCheck * ignoreHitRecord };
+				if (cullResult < 0.f) return false;
+			}
+			break;
+			case TriangleCullMode::BackFaceCulling:
+			{
+				const float cullCheck{ Vector3::Dot(triangle.normal, ray.direction) };
+				const float cullResult{ cullCheck * !ignoreHitRecord - cullCheck * ignoreHitRecord };
+				if (cullResult > 0.f) return false;
+			}
+			break;
+			case TriangleCullMode::NoCulling:
+				break;
+			default:
+				break;
+			}
+
+			const Vector3 center{ (triangle.v0 + triangle.v1 + triangle.v2) / 3 };
+			const Vector3 l{ center - ray.origin };
+			const float t{ Vector3::Dot(l, triangle.normal) / Vector3::Dot(ray.direction, triangle.normal) };
+			if (t < ray.min || t > ray.max) return false;
+
+			const Vector3 intersectionPlane{ ray.origin + t * ray.direction };
+
+			Vector3 edge{ triangle.v1 - triangle.v0 };
+			Vector3 pointToSide{ intersectionPlane - triangle.v0 };
+
+			if (Vector3::Dot(triangle.normal, Vector3::Cross(edge, pointToSide)) < 0) return false;
+
+			edge = triangle.v2 - triangle.v1;
+			pointToSide = intersectionPlane - triangle.v1;
+
+			if (Vector3::Dot(triangle.normal, Vector3::Cross(edge, pointToSide)) < 0) return false;
+
+			edge = triangle.v0 - triangle.v2;
+			pointToSide = intersectionPlane - triangle.v2;
+
+			if (Vector3::Dot(triangle.normal, Vector3::Cross(edge, pointToSide)) < 0) return false;
+
+			if (!ignoreHitRecord)
+			{
+				hitRecord.materialIndex = triangle.materialIndex;
+				hitRecord.t = t;
+				hitRecord.didHit = true;
+				hitRecord.normal = triangle.normal;
+				hitRecord.origin = intersectionPlane;
+			}
+
+			return true;
 		}
 
 		inline bool HitTest_Triangle(const Triangle& triangle, const Ray& ray)

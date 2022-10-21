@@ -123,7 +123,7 @@ namespace dae
 
 		void CalculateNormals()
 		{
-			assert(false && "No Implemented Yet!");
+			
 		}
 
 		void UpdateTransforms()

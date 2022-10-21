@@ -50,6 +50,8 @@ namespace dae
 		std::vector<TriangleMesh> m_TriangleMeshGeometries{};
 		std::vector<Light> m_Lights{};
 		std::vector<Material*> m_Materials{};
+		//Temp
+		std::vector<Triangle> m_Triangles{};
 
 		Camera m_Camera{};
 
@@ -120,6 +122,22 @@ namespace dae
 		Scene_W3_TestScene(Scene_W3_TestScene&&) noexcept = delete;
 		Scene_W3_TestScene& operator=(const Scene_W3_TestScene&) = delete;
 		Scene_W3_TestScene& operator=(Scene_W3_TestScene&&) noexcept = delete;
+
+		void Initialize() override;
+	};
+
+	//+++++++++++++++++++++++++++++++++++++++++
+	//WEEK 4 Test Scene
+	class Scene_W4_TestScene final : public Scene
+	{
+	public:
+		Scene_W4_TestScene() = default;
+		~Scene_W4_TestScene() override = default;
+
+		Scene_W4_TestScene(const Scene_W4_TestScene&) = delete;
+		Scene_W4_TestScene(Scene_W4_TestScene&&) noexcept = delete;
+		Scene_W4_TestScene& operator=(const Scene_W4_TestScene&) = delete;
+		Scene_W4_TestScene& operator=(Scene_W4_TestScene&&) noexcept = delete;
 
 		void Initialize() override;
 	};
