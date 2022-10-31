@@ -44,8 +44,8 @@ namespace dae
 		{
 			if (forwardChanged)
 			{
-				right = Vector3::Cross(Vector3::UnitY, forward).Normalized();
-				up = Vector3::Cross(forward, right).Normalized();
+				right = Vector3::Cross(Vector3::UnitY, forward);
+				up = Vector3::Cross(forward, right);
 				cameraToWorld = { right, up, forward, origin };
 				forwardChanged = false;
 			}
@@ -72,12 +72,13 @@ namespace dae
 			const float linearSpeed{ 4.f };
 			const float rotationSpeed{ 10.f };
 			float shiftModifier{ 1.f };
-			Vector3 displacement{};
+			
 
 			//Keyboard Input
 			const uint8_t* pKeyboardState = SDL_GetKeyboardState(nullptr);
+			const bool isShiftPressed{ pKeyboardState[SDL_SCANCODE_LSHIFT] || pKeyboardState[SDL_SCANCODE_RSHIFT] };
 			
-			shiftModifier = 4.f * pKeyboardState[SDL_SCANCODE_LSHIFT] + 1.f * !pKeyboardState[SDL_SCANCODE_LSHIFT];
+			shiftModifier = 4.f * isShiftPressed + 1.f * !isShiftPressed;
 			SetCameraFOV(fovAngle - pKeyboardState[SDL_SCANCODE_LEFT] + pKeyboardState[SDL_SCANCODE_RIGHT]);
 			
 			float speedModifier{ deltaTime * linearSpeed * shiftModifier };
@@ -96,7 +97,7 @@ namespace dae
 			{
 				origin += forward * speedModifier * (mouseState == SDL_BUTTON_LMASK) * static_cast<float>(mouseY);
 				origin += Vector3::UnitY * speedModifier * (mouseState == (SDL_BUTTON_RMASK | SDL_BUTTON_LMASK)) * static_cast<float>(mouseY);
-				totalPitch += static_cast<float>(mouseY) * TO_RADIANS * (mouseState == SDL_BUTTON_RMASK) * rotationModifier;
+				totalPitch -= static_cast<float>(mouseY) * TO_RADIANS * (mouseState == SDL_BUTTON_RMASK) * rotationModifier;
 				totalYaw += static_cast<float>(mouseX) * TO_RADIANS *
 					(mouseState & SDL_BUTTON_LMASK || mouseState & SDL_BUTTON_RMASK) * rotationModifier;
 				CalculateForwardVector();

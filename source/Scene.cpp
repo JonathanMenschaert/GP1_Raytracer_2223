@@ -29,21 +29,22 @@ namespace dae {
 	void dae::Scene::GetClosestHit(const Ray& ray, HitRecord& closestHit) const
 	{
 		HitRecord hitRecord{};
-		for (size_t i{}; i < m_SphereGeometries.size(); ++i)
+		for (const auto& sphere : m_SphereGeometries)
 		{
 			
-			if (GeometryUtils::HitTest_Sphere(m_SphereGeometries[i], ray, hitRecord))
+			if (GeometryUtils::HitTest_Sphere(sphere, ray, hitRecord))
 			{
 				if (hitRecord.t < closestHit.t)
 				{
 					closestHit = hitRecord;
+					closestHit.normal.Normalize();
 				}
 			}
 		}		
 
-		for (size_t i{}; i < m_PlaneGeometries.size(); ++i)
+		for (const auto& plane : m_PlaneGeometries)
 		{
-			if (GeometryUtils::HitTest_Plane(m_PlaneGeometries[i], ray, hitRecord))
+			if (GeometryUtils::HitTest_Plane(plane, ray, hitRecord))
 			{
 				if (hitRecord.t < closestHit.t)
 				{
@@ -52,9 +53,9 @@ namespace dae {
 			}
 		}
 
-		for (size_t i{}; i < m_TriangleMeshGeometries.size(); ++i)
+		for (const auto& mesh : m_TriangleMeshGeometries)
 		{
-			if (GeometryUtils::HitTest_TriangleMesh(m_TriangleMeshGeometries[i], ray, hitRecord))
+			if (GeometryUtils::HitTest_TriangleMesh(mesh, ray, hitRecord))
 			{
 				if (hitRecord.t < closestHit.t)
 				{
@@ -66,26 +67,26 @@ namespace dae {
 
 	bool Scene::DoesHit(const Ray& ray) const
 	{
-		for (size_t i{}; i < m_SphereGeometries.size(); ++i)
+		for (const auto& sphere : m_SphereGeometries)
 		{			
-			if (GeometryUtils::HitTest_Sphere(m_SphereGeometries[i], ray))
+			if (GeometryUtils::HitTest_Sphere(sphere, ray))
 			{
 				return true;
 			}
 		}
 
-		for (size_t i{}; i < m_PlaneGeometries.size(); ++i)
+		for (const auto& plane : m_PlaneGeometries)
 		{
-			if (GeometryUtils::HitTest_Plane(m_PlaneGeometries[i], ray))
+			if (GeometryUtils::HitTest_Plane(plane, ray))
 			{
 				return true;
 			}
 		}
 		
 
-		for (size_t i{}; i < m_TriangleMeshGeometries.size(); ++i)
+		for (const auto& mesh : m_TriangleMeshGeometries)
 		{
-			if (GeometryUtils::HitTest_TriangleMesh(m_TriangleMeshGeometries[i], ray))
+			if (GeometryUtils::HitTest_TriangleMesh(mesh, ray))
 			{
 				return true;
 			}
@@ -364,16 +365,19 @@ namespace dae {
 		m_Meshes[0] = AddTriangleMesh(TriangleCullMode::BackFaceCulling, matLambert_White);
 		m_Meshes[0]->AppendTriangle(baseTriangle, true);
 		m_Meshes[0]->Translate({ -1.75f, 4.5, 0.f });
+		m_Meshes[0]->UpdateAABB();
 		m_Meshes[0]->UpdateTransforms();
 
 		m_Meshes[1] = AddTriangleMesh(TriangleCullMode::FrontFaceCulling, matLambert_White);
 		m_Meshes[1]->AppendTriangle(baseTriangle, true);
 		m_Meshes[1]->Translate({ 0, 4.5, 0.f });
+		m_Meshes[1]->UpdateAABB();
 		m_Meshes[1]->UpdateTransforms();
 
 		m_Meshes[2] = AddTriangleMesh(TriangleCullMode::NoCulling, matLambert_White);
 		m_Meshes[2]->AppendTriangle(baseTriangle, true);
 		m_Meshes[2]->Translate({ 1.75f, 4.5, 0.f });
+		m_Meshes[2]->UpdateAABB();
 		m_Meshes[2]->UpdateTransforms();
 
 		//Light
@@ -403,9 +407,9 @@ namespace dae {
 
 		//TriangleMesh
 		m_pMesh = AddTriangleMesh(TriangleCullMode::BackFaceCulling, matLambert_White);
-		Utils::ParseOBJ("Resources/lowpoly_bunny.obj", m_pMesh->positions, m_pMesh->normals, m_pMesh->indices);
+		Utils::ParseOBJ("Resources/lowpoly_bunny2.obj", m_pMesh->positions, m_pMesh->normals, m_pMesh->indices);
 		m_pMesh->Scale({ 2.f, 2.f, 2.f });
-		m_pMesh->RotateY(PI);
+		m_pMesh->UpdateAABB();
 		m_pMesh->UpdateTransforms();
 
 		//Plane
