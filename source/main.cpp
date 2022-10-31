@@ -45,7 +45,7 @@ int main(int argc, char* args[])
 	const auto pTimer = new Timer();
 	const auto pRenderer = new Renderer(pWindow);
 
-	const auto pScene = new Scene_W4_BunnyScene();
+	const auto pScene = new Scene_W4_ReferenceScene();
 	pScene->Initialize();
 
 	//Start loop
@@ -65,8 +65,21 @@ int main(int argc, char* args[])
 				isLooping = false;
 				break;
 			case SDL_KEYUP:
-				if(e.key.keysym.scancode == SDL_SCANCODE_X)
+				switch (e.key.keysym.scancode)
+				{
+				case SDL_SCANCODE_X:
 					takeScreenshot = true;
+					break;
+				case SDL_SCANCODE_F2:
+					pRenderer->ToggleShadows();
+					break;
+				case SDL_SCANCODE_F3:
+					pRenderer->CycleLightingMode();
+					break;
+				case SDL_SCANCODE_F6:
+					pTimer->StartBenchmark();
+					break;
+				}
 				break;
 			}
 		}
@@ -75,7 +88,6 @@ int main(int argc, char* args[])
 		pScene->Update(pTimer);
 
 		//--------- Render ---------
-		pRenderer->Update(pTimer);
 		pRenderer->Render(pScene);
 
 		//--------- Timer ---------

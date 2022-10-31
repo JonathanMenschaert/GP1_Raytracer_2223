@@ -27,7 +27,6 @@ namespace dae
 
 		void Render(Scene* pScene) const;
 		void RenderPixel(Scene* pScene, uint32_t pixelIndex, float fov, float aspectRatio, const Camera& camera, const std::vector<Light>& lights, const std::vector<Material*>& materials) const;
-		void Update(dae::Timer* pTimer);
 
 		bool SaveBufferToImage() const;
 

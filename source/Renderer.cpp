@@ -167,35 +167,6 @@ void dae::Renderer::RenderPixel(Scene* pScene, uint32_t pixelIndex, float fov, f
 	
 }
 
-void dae::Renderer::Update(dae::Timer* pTimer)
-{
-	const uint8_t* pKeyboardState = SDL_GetKeyboardState(nullptr);
-	if (pKeyboardState[SDL_SCANCODE_F3])
-	{
-		if (!m_F3Pressed)
-		{
-			CycleLightingMode();
-			m_F3Pressed = true;
-		}		
-	}
-	else 
-	{
-		m_F3Pressed = false;
-	}
-	if (pKeyboardState[SDL_SCANCODE_F2])
-	{
-		if (!m_F2Pressed)
-		{
-			ToggleShadows();
-			m_F2Pressed = true;
-		}
-	}
-	else
-	{
-		m_F2Pressed = false;
-	}
-}
-
 bool Renderer::SaveBufferToImage() const
 {
 	return SDL_SaveBMP(m_pBuffer, "RayTracing_Buffer.bmp");
