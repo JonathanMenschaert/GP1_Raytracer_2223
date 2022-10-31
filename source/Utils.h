@@ -114,7 +114,29 @@ namespace dae
 				break;
 			}
 
-			const Vector3 center{ (triangle.v0 + triangle.v1 + triangle.v2) / 3.f };
+			//Source: https://en.wikipedia.org/wiki/M%C3%B6ller%E2%80%93Trumbore_intersection_algorithm
+			Vector3 edge1{ triangle.v1 - triangle.v0 };
+			Vector3 edge2{ triangle.v2 - triangle.v0 };
+			Vector3 h{ Vector3::Cross(ray.direction, edge2) };
+
+			float a{ Vector3::Dot(edge1, h) };
+			if (abs(a) < FLT_EPSILON) return false;
+
+			float aInverse{ 1.f / a };
+			Vector3 s{ ray.origin - triangle.v0 };
+			float u{ aInverse * Vector3::Dot(s, h) };
+			if (u < 0.f || u > 1.f) return false;
+
+			Vector3 q{ Vector3::Cross(s, edge1) };
+			float v{ aInverse * Vector3::Dot(ray.direction, q) };
+			if (v < 0.f || (u + v) > 1.f) return false;
+
+			float t{ aInverse * Vector3::Dot(edge2, q) };
+			if (t < ray.min || t >= ray.max) return false;
+
+			Vector3 intersectionPoint{ ray.origin + t * ray.direction };
+
+			/*const Vector3 center{ (triangle.v0 + triangle.v1 + triangle.v2) / 3.f };
 			const Vector3 vectorToPlane{ center - ray.origin };
 			const float t{ Vector3::Dot(vectorToPlane, triangle.normal) / cullDot };
 
@@ -128,7 +150,7 @@ namespace dae
 			if (Vector3::Dot(triangle.normal, Vector3::Cross(triangle.v2 - triangle.v1, intersectionPoint - triangle.v1)) < 0) return false;
 
 
-			if (Vector3::Dot(triangle.normal, Vector3::Cross(triangle.v0 - triangle.v2, intersectionPoint - triangle.v2)) < 0) return false;
+			if (Vector3::Dot(triangle.normal, Vector3::Cross(triangle.v0 - triangle.v2, intersectionPoint - triangle.v2)) < 0) return false;*/
 
 			
 			if (!ignoreHitRecord)

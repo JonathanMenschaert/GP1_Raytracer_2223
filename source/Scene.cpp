@@ -426,11 +426,12 @@ namespace dae {
 		AddPointLight({ -2.5f, 5.f, -5.f }, 70.f, ColorRGB{ 1.f, 0.8f, 0.45f });
 		AddPointLight({ 2.5f, 2.5f, -5.f }, 50.f, ColorRGB{ 0.34f, 0.47f, 0.68f });
 	}
-	/*void Scene_W4_BunnyScene::Update(Timer* pTimer)
+	void Scene_W4_BunnyScene::Update(Timer* pTimer)
 	{
 		Scene::Update(pTimer);
-		m_pMesh->RotateY(PI_DIV_2 * pTimer->GetTotal());
+		const auto yawAngle{ (cosf(pTimer->GetTotal()) + 1.f) / 2.f * PI_2 };
+		m_pMesh->RotateY(yawAngle);
 		m_pMesh->UpdateTransforms();
-	}*/
+	}
 #pragma endregion
 }
