@@ -3,6 +3,7 @@
 
 #include "Math.h"
 #include "vector"
+#include <iostream>
 
 namespace dae
 {
@@ -28,6 +29,50 @@ namespace dae
 		FrontFaceCulling,
 		BackFaceCulling,
 		NoCulling
+	};
+
+	enum class Axis
+	{
+		axisX,
+		axisY,
+		axisZ
+	};
+
+	struct BVHNode
+	{
+		Vector3 minAABB{};
+		Vector3 maxAABB{};
+
+		std::vector<int> indices{};
+
+		BVHNode* leftNode {nullptr};
+		BVHNode* rightNode{nullptr};
+
+		~BVHNode()
+		{
+			delete leftNode;
+			delete rightNode;
+		}
+
+		void CalculateAABB(std::vector<int>& indices, std::vector<Vector3>& positions, int start, int end)
+		{
+			if (positions.size() > 0)
+			{
+				minAABB = positions[0];
+				maxAABB = positions[0];
+				for (auto& p : positions)
+				{
+					
+				}
+			}
+
+			for (size_t i{ static_cast<size_t>(start) }; i < static_cast<size_t>(end); ++i)
+			{
+				Vector3 pos{ positions[indices[i]]};
+				minAABB = Vector3::Min(pos, minAABB);
+				maxAABB = Vector3::Max(pos, maxAABB);
+			}
+		}		
 	};
 
 	struct Triangle
@@ -73,6 +118,11 @@ namespace dae
 			UpdateTransforms();
 		}
 
+		~TriangleMesh()
+		{
+			delete pBVHNode;
+		}
+
 		std::vector<Vector3> positions{};
 		std::vector<Vector3> normals{};
 		std::vector<int> indices{};
@@ -88,6 +138,9 @@ namespace dae
 		Vector3 maxAABB;
 		Vector3 transformedMinAABB;
 		Vector3 transformedMaxAABB;
+
+		BVHNode* pBVHNode = nullptr;
+		const int leafSize{4};
 
 		std::vector<Vector3> transformedPositions{};
 		std::vector<Vector3> transformedNormals{};
@@ -167,7 +220,9 @@ namespace dae
 				transformedNormals.emplace_back(finalTransform.TransformVector(normal).Normalized());
 			}
 
-			UpdateTransformedAABB(finalTransform);
+
+			UpdateTransformedAABB(finalTransform);			
+			UpdateBVH(*pBVHNode, 0, static_cast<int>(indices.size()));
 		}
 
 		void UpdateAABB()
@@ -221,6 +276,110 @@ namespace dae
 
 			transformedMinAABB = tMinAABB;
 			transformedMaxAABB = tMaxAABB;
+		}
+
+		int GetPartitionIndex(int axis, std::vector<Vector3>& centroids, int start, int end)
+		{
+			int pivotIdx{ (end - start) / 6};
+			float pivotVal{ centroids[pivotIdx][axis] };
+
+			
+
+			while (start <= end)
+			{
+				//while (centroids[centroidStart][axis] < pivotVal)
+				//{
+				//	start += 3;
+				//}
+				//while (centroids[centroidEnd][axis] > pivotVal)
+				//{
+				//	end -= 3;
+				//}
+				//if (start <= end)
+				//{
+				//	////Swap centroids
+				//	//std::swap(centroids[centroidStart], centroids[centroidEnd]);
+				//	////Swap positions
+				//	//size_t startIdx{ start + centroidStart * 3 };
+				//	//size_t endIdx{ start + centroidEnd * 3 };
+				//	std::swap(indices[start], indices[end]);
+				//	std::swap(indices[start + 1], indices[end + 1]);
+				//	std::swap(indices[start + 2], indices[end + 2]);
+
+				//	start += 3;
+				//	end -= 3;
+				//}
+			}
+			return start;
+		}
+
+		void QuicksortBVH(int axis, std::vector<Vector3>& centroids, int start, int end)
+		{
+			if (start < end)
+			{
+				int pivot{ GetPartitionIndex(axis, centroids, start, end) };
+				int pivotOffset{ pivot - 1 };
+				QuicksortBVH(axis, centroids, start, pivot - 1);
+				QuicksortBVH(axis, centroids, pivot, end);
+			}
+		}
+
+		int SortOnAxis(Axis axis, int start, int end)
+		{
+			//Calculate centroids of the triangles between the start and end index of indices
+			std::vector<Vector3> centroids{};
+			int deltaIdx{ end - start };
+			centroids.reserve((deltaIdx) / 3);
+			for (size_t i{static_cast<size_t>(start)}; i < end; i += 3)
+			{
+				Vector3 centroid{ (transformedPositions[indices[i]] + positions[indices[i + 1]] + positions[indices[i + 2]]) / 3};
+				centroids.emplace_back(centroid);
+			}
+
+			//Quicksort algorithm to sort the values along the chosen axis
+			QuicksortBVH(static_cast<int>(axis), centroids, start, end - 1);
+
+			//Return the index to split on. Multiply by 3 to fit the indices vector
+			int splitIdx{ static_cast<int>(3 * centroids.size() / 2.f) - 1};
+			return splitIdx;
+		}
+
+		void UpdateBVH(BVHNode& node, int start, int end)
+		{
+			//Calculate bounding box of positions between start and end
+			node.CalculateAABB(indices, transformedPositions, start, end);			
+
+			int test{ end - start };
+			if ((end - start) > (3 * leafSize))
+			{
+				//Determine axis the algorithm needs to use
+				float axisX{ node.maxAABB.x - node.minAABB.x };
+				float axisY{ node.maxAABB.y - node.minAABB.y };
+				float axisZ{ node.maxAABB.z - node.minAABB.z };
+
+				float axisLongest{ std::max(axisX, std::max(axisY, axisZ)) };
+				Axis axis{ Axis::axisX };
+				if (abs(axisLongest - axisY) <= FLT_EPSILON)
+				{
+					axis = Axis::axisY;
+				}
+				else if (axisLongest == axisZ)
+				{
+					axis = Axis::axisZ;
+				}
+				
+				int splitIdx{ SortOnAxis(axis, start, end) };
+
+				//Init nodes if they don't exist yet
+				if (!node.leftNode) node.leftNode = new BVHNode{};
+				if (!node.rightNode) node.rightNode = new BVHNode{};	
+				UpdateBVH(*node.leftNode, start, start + splitIdx - 1);
+				UpdateBVH(*node.rightNode, start + splitIdx, end);
+			}
+			else
+			{
+				//std::cout << "leaf reached" << "\n";
+			}
 		}
 	};
 #pragma endregion

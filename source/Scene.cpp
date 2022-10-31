@@ -365,18 +365,21 @@ namespace dae {
 		m_Meshes[0] = AddTriangleMesh(TriangleCullMode::BackFaceCulling, matLambert_White);
 		m_Meshes[0]->AppendTriangle(baseTriangle, true);
 		m_Meshes[0]->Translate({ -1.75f, 4.5, 0.f });
+		m_Meshes[0]->pBVHNode = new BVHNode{};
 		m_Meshes[0]->UpdateAABB();
 		m_Meshes[0]->UpdateTransforms();
 
 		m_Meshes[1] = AddTriangleMesh(TriangleCullMode::FrontFaceCulling, matLambert_White);
 		m_Meshes[1]->AppendTriangle(baseTriangle, true);
 		m_Meshes[1]->Translate({ 0, 4.5, 0.f });
+		m_Meshes[1]->pBVHNode = new BVHNode{};
 		m_Meshes[1]->UpdateAABB();
 		m_Meshes[1]->UpdateTransforms();
 
 		m_Meshes[2] = AddTriangleMesh(TriangleCullMode::NoCulling, matLambert_White);
 		m_Meshes[2]->AppendTriangle(baseTriangle, true);
 		m_Meshes[2]->Translate({ 1.75f, 4.5, 0.f });
+		m_Meshes[2]->pBVHNode = new BVHNode{};
 		m_Meshes[2]->UpdateAABB();
 		m_Meshes[2]->UpdateTransforms();
 
@@ -407,8 +410,9 @@ namespace dae {
 
 		//TriangleMesh
 		m_pMesh = AddTriangleMesh(TriangleCullMode::BackFaceCulling, matLambert_White);
-		Utils::ParseOBJ("Resources/lowpoly_bunny2.obj", m_pMesh->positions, m_pMesh->normals, m_pMesh->indices);
+		Utils::ParseOBJ("Resources/simple_cube.obj", m_pMesh->positions, m_pMesh->normals, m_pMesh->indices);
 		m_pMesh->Scale({ 2.f, 2.f, 2.f });
+		m_pMesh->pBVHNode = new BVHNode{};
 		m_pMesh->UpdateAABB();
 		m_pMesh->UpdateTransforms();
 
@@ -429,9 +433,9 @@ namespace dae {
 	void Scene_W4_BunnyScene::Update(Timer* pTimer)
 	{
 		Scene::Update(pTimer);
-		const auto yawAngle{ (cosf(pTimer->GetTotal()) + 1.f) / 2.f * PI_2 };
+		/*const auto yawAngle{ (cosf(pTimer->GetTotal()) + 1.f) / 2.f * PI_2 };
 		m_pMesh->RotateY(yawAngle);
-		m_pMesh->UpdateTransforms();
+		m_pMesh->UpdateTransforms();*/
 	}
 #pragma endregion
 }
