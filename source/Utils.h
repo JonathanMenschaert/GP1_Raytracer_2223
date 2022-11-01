@@ -3,6 +3,7 @@
 #include <fstream>
 #include "Math.h"
 #include "DataTypes.h"
+//#define BVH
 
 namespace dae
 {
@@ -13,40 +14,61 @@ namespace dae
 		//SPHERE HIT-TESTS
 		inline bool HitTest_Sphere(const Sphere& sphere, const Ray& ray, HitRecord& hitRecord, bool ignoreHitRecord = false)
 		{
-			const Vector3 originVector{ ray.origin - sphere.origin };
-			//at² + bt + c = 0
-			const float a{ Vector3::Dot(ray.direction, ray.direction) };
-			const float b{ Vector3::Dot(2 * ray.direction, originVector) };
-			const float c{ Vector3::Dot(originVector, originVector) - Square(sphere.radius)};
-			
-			const float discriminant = Square(b) - 4 * a * c;
+			//const Vector3 originVector{ ray.origin - sphere.origin };
+			////at² + bt + c = 0
+			//const float a{ Vector3::Dot(ray.direction, ray.direction) };
+			//const float b{ Vector3::Dot(2 * ray.direction, originVector) };
+			//const float c{ Vector3::Dot(originVector, originVector) - Square(sphere.radius)};
+			//
+			//const float discriminant = Square(b) - 4 * a * c;
 
-			if (discriminant > 0) 
-			{
-				const float discriminantSqrt{ sqrtf(discriminant) };
-				float t{ (-b - discriminantSqrt) / (2 * a) };
-				if (t < ray.min)
-				{
-					t = (-b + discriminantSqrt) / (2 * a);
-					if (t < ray.min)
-					{
-						return false;
-					}
-				}
-				if (t < ray.max)
-				{
-					if (!ignoreHitRecord)
-					{
-						hitRecord.didHit = true;
-						hitRecord.materialIndex = sphere.materialIndex;
-						hitRecord.origin = ray.origin + t * ray.direction;
-						hitRecord.normal = (hitRecord.origin - sphere.origin);
-						hitRecord.t = t;
-					}
-					return true;
-				}
-			}
-			return false;
+			//if (discriminant > 0) 
+			//{
+			//	const float discriminantSqrt{ sqrtf(discriminant) };
+			//	float t{ (-b - discriminantSqrt) / (2 * a) };
+			//	if (t < ray.min)
+			//	{
+			//		t = (-b + discriminantSqrt) / (2 * a);
+			//		if (t < ray.min)
+			//		{
+			//			return false;
+			//		}
+			//	}
+			//	if (t < ray.max)
+			//	{
+			//		if (!ignoreHitRecord)
+			//		{
+			//			hitRecord.didHit = true;
+			//			hitRecord.materialIndex = sphere.materialIndex;
+			//			hitRecord.origin = ray.origin + t * ray.direction;
+			//			hitRecord.normal = (hitRecord.origin - sphere.origin);
+			//			hitRecord.t = t;
+			//		}
+			//		return true;
+			//	}
+			//}
+			//return false;
+
+			const Vector3 originVector{ sphere.origin - ray.origin };
+			const float originVectorSqr{ originVector.SqrMagnitude() };
+			const float originVectorMagnitudeProjected { Vector3::Dot(ray.direction, originVector) };
+			const float originVectorPerpendicular{ originVectorSqr - Square(originVectorMagnitudeProjected) };
+			const float radiusSqr{ Square(sphere.radius) };
+			if (radiusSqr < originVectorPerpendicular) return false;
+
+			const float distancePointIntersection{ sqrtf(radiusSqr - originVectorPerpendicular) };
+			const float t{ originVectorMagnitudeProjected - distancePointIntersection };
+
+			if (t < ray.min || t > ray.max) return false;
+			if (ignoreHitRecord) return true;
+				
+			hitRecord.didHit = true;
+			hitRecord.materialIndex = sphere.materialIndex;
+			hitRecord.origin = ray.origin + t * ray.direction;
+			hitRecord.normal = (hitRecord.origin - sphere.origin);
+			hitRecord.t = t;
+				
+			return true;
 		}
 
 		inline bool HitTest_Sphere(const Sphere& sphere, const Ray& ray)
@@ -265,10 +287,38 @@ namespace dae
 
 		inline bool HitTest_TriangleMesh(const TriangleMesh& mesh, const Ray& ray, HitRecord& hitRecord, bool ignoreHitRecord = false)
 		{
+			
 			HitRecord closestHit{};
-			bool didHit{};
+			bool didHit{ };
+#ifdef BVH
 			IntersectionTest_BVH(mesh, 0, ray, didHit, hitRecord, closestHit, ignoreHitRecord);
+#else
+			if (!SlabTest_TriangleMesh(mesh, ray))
+			{
+				return false;
+			}
+			Triangle triangle{};
+			triangle.materialIndex = mesh.materialIndex;
+			triangle.cullMode = mesh.cullMode;
+			for (int idx{}; idx < mesh.indices.size(); idx += 3)
+			{
+				triangle.v0 = mesh.transformedPositions[mesh.indices[idx]];
+				triangle.v1 = mesh.transformedPositions[mesh.indices[idx + 1]];
+				triangle.v2 = mesh.transformedPositions[mesh.indices[idx + 2]];
+				triangle.normal = mesh.transformedNormals[idx / 3];
 
+
+				if (HitTest_Triangle(triangle, ray, closestHit, ignoreHitRecord))
+				{
+					if (ignoreHitRecord) return true;
+					if (closestHit.t < hitRecord.t)
+					{
+						hitRecord = closestHit;
+					}
+					didHit = true;
+				}
+			}
+#endif			
 			return didHit;
 		}
 
