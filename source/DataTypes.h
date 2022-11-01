@@ -43,7 +43,7 @@ namespace dae
 		Vector3 minAABB{};
 		Vector3 maxAABB{};
 
-		std::vector<int> indices{};
+		std::vector<int> posIndices{};
 
 		BVHNode* leftNode {nullptr};
 		BVHNode* rightNode{nullptr};
@@ -56,21 +56,16 @@ namespace dae
 
 		void CalculateAABB(std::vector<int>& indices, std::vector<Vector3>& positions, int start, int end)
 		{
-			if (positions.size() > 0)
+			if (indices.size() > 0)
 			{
-				minAABB = positions[0];
-				maxAABB = positions[0];
-				for (auto& p : positions)
+				minAABB = positions[indices[start]];
+				maxAABB = positions[indices[start]];
+				for (size_t i{ static_cast<size_t>(start) }; i < static_cast<size_t>(end); ++i)
 				{
-					
+					Vector3 pos{ positions[indices[i]] };
+					minAABB = Vector3::Min(pos, minAABB);
+					maxAABB = Vector3::Max(pos, maxAABB);
 				}
-			}
-
-			for (size_t i{ static_cast<size_t>(start) }; i < static_cast<size_t>(end); ++i)
-			{
-				Vector3 pos{ positions[indices[i]]};
-				minAABB = Vector3::Min(pos, minAABB);
-				maxAABB = Vector3::Max(pos, maxAABB);
 			}
 		}		
 	};
@@ -278,49 +273,55 @@ namespace dae
 			transformedMaxAABB = tMaxAABB;
 		}
 
-		int GetPartitionIndex(int axis, std::vector<Vector3>& centroids, int start, int end)
+		int GetPartitionIndex(int axis, std::vector<Vector3>& centroids, int centroidOffset, int start, int end)
 		{
-			int pivotIdx{ (end - start) / 6};
+
+			int centroidStartIdx{ (start - centroidOffset) / 3 };
+			int rangeIdx{ end - start - 1};
+			int pivotIdx{ centroidStartIdx + rangeIdx / 6};
 			float pivotVal{ centroids[pivotIdx][axis] };
 
-			
+			int centroidEndIdx{centroidStartIdx + std::min(static_cast<int>(centroids.size() - 1), rangeIdx / 3)};
 
-			while (start <= end)
+			while (centroidStartIdx <= centroidEndIdx)
 			{
-				//while (centroids[centroidStart][axis] < pivotVal)
-				//{
-				//	start += 3;
-				//}
-				//while (centroids[centroidEnd][axis] > pivotVal)
-				//{
-				//	end -= 3;
-				//}
-				//if (start <= end)
-				//{
-				//	////Swap centroids
-				//	//std::swap(centroids[centroidStart], centroids[centroidEnd]);
-				//	////Swap positions
-				//	//size_t startIdx{ start + centroidStart * 3 };
-				//	//size_t endIdx{ start + centroidEnd * 3 };
-				//	std::swap(indices[start], indices[end]);
-				//	std::swap(indices[start + 1], indices[end + 1]);
-				//	std::swap(indices[start + 2], indices[end + 2]);
+				while (centroids[centroidStartIdx][axis] < pivotVal)
+				{
+					++centroidStartIdx;
+				}
+				while (centroids[centroidEndIdx][axis] > pivotVal)
+				{
+					--centroidEndIdx;
+				}
+				if (centroidStartIdx <= centroidEndIdx)
+				{
+					//Swap centroids
+					std::swap(centroids[centroidStartIdx], centroids[centroidEndIdx]);
+					//Swap positions
+					size_t startOffset{ static_cast<size_t>(centroidStartIdx * 3 )};
+					size_t endOffset{ static_cast<size_t>(centroidEndIdx * 3) };
+					std::swap(indices[startOffset], indices[endOffset]);
+					std::swap(indices[startOffset + 1], indices[endOffset + 1]);
+					std::swap(indices[startOffset + 2], indices[endOffset + 2]);
+					std::swap(normals[startOffset / 3], normals[endOffset / 3]);
+					std::swap(transformedNormals[startOffset / 3], transformedNormals[endOffset / 3]);
 
-				//	start += 3;
-				//	end -= 3;
-				//}
+					++centroidStartIdx;
+					--centroidEndIdx;
+				}
 			}
-			return start;
+			return start + centroidStartIdx * 3;
 		}
 
-		void QuicksortBVH(int axis, std::vector<Vector3>& centroids, int start, int end)
+		void QuicksortBVH(int axis, std::vector<Vector3>& centroids, int centroidOffset, int start, int end)
 		{
-			if (start < end)
+			if (start < end - 3)
 			{
-				int pivot{ GetPartitionIndex(axis, centroids, start, end) };
+				int pivot{ GetPartitionIndex(axis, centroids, centroidOffset, start, end) };
 				int pivotOffset{ pivot - 1 };
-				QuicksortBVH(axis, centroids, start, pivot - 1);
-				QuicksortBVH(axis, centroids, pivot, end);
+				
+				QuicksortBVH(axis, centroids, start, start, pivotOffset);				
+				QuicksortBVH(axis, centroids, start, pivot, end);
 			}
 		}
 
@@ -329,15 +330,16 @@ namespace dae
 			//Calculate centroids of the triangles between the start and end index of indices
 			std::vector<Vector3> centroids{};
 			int deltaIdx{ end - start };
+			centroids.clear();
 			centroids.reserve((deltaIdx) / 3);
-			for (size_t i{static_cast<size_t>(start)}; i < end; i += 3)
+			for (size_t i{static_cast<size_t>(start)}; i < end - 3; i += 3)
 			{
 				Vector3 centroid{ (transformedPositions[indices[i]] + positions[indices[i + 1]] + positions[indices[i + 2]]) / 3};
 				centroids.emplace_back(centroid);
 			}
 
 			//Quicksort algorithm to sort the values along the chosen axis
-			QuicksortBVH(static_cast<int>(axis), centroids, start, end - 1);
+			QuicksortBVH(static_cast<int>(axis), centroids, start, start, end - 3);
 
 			//Return the index to split on. Multiply by 3 to fit the indices vector
 			int splitIdx{ static_cast<int>(3 * centroids.size() / 2.f) - 1};
@@ -378,7 +380,12 @@ namespace dae
 			}
 			else
 			{
-				//std::cout << "leaf reached" << "\n";
+				node.posIndices.clear();
+				node.posIndices.reserve(static_cast<size_t>(end - start));
+				for (int i{ start }; i < end; ++i)
+				{
+					node.posIndices.emplace_back(indices[static_cast<size_t>(i)]);
+				}
 			}
 		}
 	};

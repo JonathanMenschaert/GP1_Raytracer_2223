@@ -37,11 +37,11 @@ namespace dae
 				{
 					if (!ignoreHitRecord)
 					{
-						hitRecord.materialIndex = sphere.materialIndex;
-						hitRecord.t = t;
 						hitRecord.didHit = true;
-						hitRecord.origin = ray.origin + hitRecord.t * ray.direction;
+						hitRecord.materialIndex = sphere.materialIndex;
+						hitRecord.origin = ray.origin + t * ray.direction;
 						hitRecord.normal = (hitRecord.origin - sphere.origin);
+						hitRecord.t = t;
 					}
 					return true;
 				}
@@ -64,11 +64,11 @@ namespace dae
 			{
 				if (!ignoreHitRecord)
 				{
-					hitRecord.materialIndex = plane.materialIndex;
-					hitRecord.t = t;
 					hitRecord.didHit = true;
+					hitRecord.materialIndex = plane.materialIndex;
 					hitRecord.normal = plane.normal;
-					hitRecord.origin = ray.origin + hitRecord.t * ray.direction;
+					hitRecord.origin = ray.origin + t * ray.direction;
+					hitRecord.t = t;
 				}
 				return true;
 			}
@@ -156,9 +156,9 @@ namespace dae
 			if (!ignoreHitRecord)
 			{
 				hitRecord.materialIndex = triangle.materialIndex;
-				hitRecord.t = t;
 				hitRecord.didHit = true;
 				hitRecord.normal = triangle.normal;
+				hitRecord.t = t;
 				hitRecord.origin = intersectionPoint;
 			}
 
@@ -196,37 +196,74 @@ namespace dae
 			return tMax > 0 && tMax >= tMin;
 		}
 
+		inline bool SlabTest_BVH(const Vector3& minAABB, const Vector3& maxAABB, const Ray& ray)
+		{
+			float tx1 = (minAABB.x - ray.origin.x) / ray.direction.x;
+			float tx2 = (maxAABB.x - ray.origin.x) / ray.direction.x;
+
+			float tMin = std::min(tx1, tx2);
+			float tMax = std::max(tx1, tx2);
+
+			float ty1 = (minAABB.y - ray.origin.y) / ray.direction.y;
+			float ty2 = (maxAABB.y - ray.origin.y) / ray.direction.y;
+
+			tMin = std::max(tMin, std::min(ty1, ty2));
+			tMax = std::min(tMax, std::max(ty1, ty2));
+
+			float tz1 = (minAABB.z - ray.origin.z) / ray.direction.z;
+			float tz2 = (maxAABB.z - ray.origin.z) / ray.direction.z;
+
+			tMin = std::max(tMin, std::min(tz1, tz2));
+			tMax = std::min(tMax, std::max(tz1, tz2));
+
+			return tMax > 0 && tMax >= tMin;
+		}
+
+
+		inline void IntersectionTest_BVH(const TriangleMesh& mesh, const BVHNode& node, const Ray& ray, HitRecord& hitRecord, HitRecord& currentRecord, bool ignoreHitRecord)
+		{
+			if (!SlabTest_BVH(node.minAABB, node.maxAABB, ray))
+			{
+				return;
+			}
+
+			if (node.posIndices.size() > 0)
+			{
+				Triangle triangle{};
+				triangle.materialIndex = mesh.materialIndex;
+				triangle.cullMode = mesh.cullMode;
+				for (int idx{}; idx < mesh.indices.size(); idx += 3)
+				{
+					triangle.v0 = mesh.transformedPositions[mesh.indices[idx]];
+					triangle.v1 = mesh.transformedPositions[mesh.indices[idx + 1]];
+					triangle.v2 = mesh.transformedPositions[mesh.indices[idx + 2]];
+					triangle.normal = mesh.transformedNormals[idx / 3];
+
+
+					if (HitTest_Triangle(triangle, ray, currentRecord, ignoreHitRecord))
+					{
+						if (ignoreHitRecord) return;
+						if (currentRecord.t < hitRecord.t)
+						{
+							hitRecord = currentRecord;
+						}
+					}
+				}
+			}
+			else
+			{
+				IntersectionTest_BVH(mesh, *node.leftNode, ray, hitRecord, currentRecord, ignoreHitRecord);
+				IntersectionTest_BVH(mesh, *node.rightNode, ray, hitRecord, currentRecord, ignoreHitRecord);
+			}
+		}
+
 		inline bool HitTest_TriangleMesh(const TriangleMesh& mesh, const Ray& ray, HitRecord& hitRecord, bool ignoreHitRecord = false)
 		{
-
-			if (!SlabTest_TriangleMesh(mesh, ray))
-			{
-				return false;
-			}
 			HitRecord closestHit{};
-			bool didHit{ };
-			Triangle triangle{};
-			triangle.materialIndex = mesh.materialIndex;
-			triangle.cullMode = mesh.cullMode;
-			for (int idx{}; idx < mesh.indices.size(); idx += 3)
-			{
-				triangle.v0 = mesh.transformedPositions[mesh.indices[idx]];
-				triangle.v1 = mesh.transformedPositions[mesh.indices[idx + 1]];
-				triangle.v2 = mesh.transformedPositions[mesh.indices[idx + 2]];
-				triangle.normal = mesh.transformedNormals[idx / 3];
-				
-				
-				if (HitTest_Triangle(triangle, ray, closestHit, ignoreHitRecord)) 
-				{
-					if (ignoreHitRecord) return true;
-					if (closestHit.t < hitRecord.t)
-					{
-						hitRecord = closestHit;
-					}
-					didHit = true;
-				}				
-			}
-			return didHit;
+			
+			IntersectionTest_BVH(mesh, *mesh.pBVHNode, ray, hitRecord, closestHit, ignoreHitRecord);
+
+			return hitRecord.didHit;
 		}
 
 		inline bool HitTest_TriangleMesh(const TriangleMesh& mesh, const Ray& ray)
