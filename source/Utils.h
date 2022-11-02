@@ -3,7 +3,7 @@
 #include <fstream>
 #include "Math.h"
 #include "DataTypes.h"
-//#define BVH
+#define BVH
 
 namespace dae
 {

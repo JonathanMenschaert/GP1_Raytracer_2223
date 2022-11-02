@@ -62,7 +62,7 @@ void Renderer::Render(Scene* pScene) const
 					const uint32_t pixelIndexEnd{ currPixelIndex + taskSize };
 					for (uint32_t pixelIndex{ currPixelIndex }; pixelIndex < pixelIndexEnd; ++pixelIndex)
 					{
-						RenderPixel(pScene, pixelIndex, camera.fov, m_AspectRatio, camera, lights, materials);
+						RenderPixel(pScene, pixelIndex, m_AspectRatio, camera, lights, materials);
 					}
 				}
 			)
@@ -80,14 +80,14 @@ void Renderer::Render(Scene* pScene) const
 	//parallel
 	concurrency::parallel_for(0u, numPixels, [=, this](int i)
 		{
-			RenderPixel(pScene, i, camera.fov, m_AspectRatio, camera, lights, materials);
+			RenderPixel(pScene, i, m_AspectRatio, camera, lights, materials);
 		}
 	);
 #else
 	//synchronous
 	for (uint32_t i{}; i < numPixels; ++i)
 	{
-		RenderPixel(pScene, i, camera.fov, m_AspectRatio, camera, lights, materials);
+		RenderPixel(pScene, i, m_AspectRatio, camera, lights, materials);
 	}
 #endif
 	
@@ -97,7 +97,7 @@ void Renderer::Render(Scene* pScene) const
 	SDL_UpdateWindowSurface(m_pWindow);
 }
 
-void dae::Renderer::RenderPixel(Scene* pScene, uint32_t pixelIndex, float fov, float aspectRatio, const Camera& camera, const std::vector<Light>& lights, const std::vector<Material*>& materials) const
+void dae::Renderer::RenderPixel(Scene* pScene, uint32_t pixelIndex, float aspectRatio, const Camera& camera, const std::vector<Light>& lights, const std::vector<Material*>& materials) const
 {
 	const int px = pixelIndex % m_Width;
 	const int py = pixelIndex / m_Width;

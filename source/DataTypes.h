@@ -5,6 +5,8 @@
 #include "vector"
 #include <iostream>
 
+#define BVH
+//#define USE_BINS
 namespace dae
 {
 #pragma region GEOMETRY
@@ -40,8 +42,8 @@ namespace dae
 
 	struct BVHNode
 	{
-		Vector3 minAABB{};
-		Vector3 maxAABB{};
+		Vector3 minAABB{ Vector3::MaxVector };
+		Vector3 maxAABB{ Vector3::MinVector };
 		unsigned int firstIdx;
 		unsigned int idxCount;
 		unsigned int leftNode;
@@ -49,6 +51,35 @@ namespace dae
 		{
 			return idxCount > 0;
 		};
+	};
+
+	struct AABB
+	{
+		Vector3 minAABB{ Vector3::MaxVector };
+		Vector3 maxAABB{ Vector3::MinVector };
+		void Grow(const Vector3& point)
+		{
+			minAABB = Vector3::Min(minAABB, point);
+			maxAABB = Vector3::Max(maxAABB, point);
+		}
+
+		void Grow(const AABB& aabb)
+		{
+			minAABB = Vector3::Min(minAABB, aabb.minAABB);
+			maxAABB = Vector3::Min(maxAABB, aabb.maxAABB);
+		}
+
+		float Area()
+		{
+			Vector3 aabb{ maxAABB - minAABB };
+			return aabb.x * aabb.y + aabb.y * aabb.z + aabb.z * aabb.x;
+		}
+	};
+
+	struct Bin
+	{
+		AABB bounds{};
+		unsigned int idxCount{};
 	};
 
 	struct Triangle
@@ -118,8 +149,7 @@ namespace dae
 		BVHNode* pBVHNodes{};
 		unsigned int rootNodeIdx{};
 		unsigned int nodesUsed{1};
-
-		const unsigned int leafSize{4};
+		const unsigned int leafSize{3 * 3 - 1};
 
 		std::vector<Vector3> transformedPositions{};
 		std::vector<Vector3> transformedNormals{};
@@ -200,8 +230,10 @@ namespace dae
 			}
 
 
-			UpdateTransformedAABB(finalTransform);			
+			UpdateTransformedAABB(finalTransform);	
+#ifdef BVH
 			BuildBVH();
+#endif
 		}
 
 		void UpdateAABB()
@@ -291,15 +323,22 @@ namespace dae
 		{
 			//Terminate Recursion if necessary
 			BVHNode& node = pBVHNodes[nodeIdx];
-			if (node.idxCount <= leafSize) return;
+			if (node.idxCount <= 8) return;
 
 			//Determine split axis
+#ifdef USE_BINS
+			int axis{ 0 };
+			float splitPos{};
+			const float splitCost{ FindBestSplitPlane(node, axis, splitPos)};
+			const float noSplitCost{ CalculateNodeCost(node) };
+			if (splitCost >= noSplitCost) return;
+#else
 			Vector3 extent{ node.maxAABB - node.minAABB };
 			int axis{ 0 };
 			if (extent.y > extent.x) axis = 1;
 			if (extent.z > extent[axis]) axis = 2;
 			float splitPos{ node.minAABB[axis] + extent[axis] * 0.5f };
-
+#endif
 			//Partitioning
 			int i{ static_cast<int>(node.firstIdx) };
 			int j{ i + static_cast<int>(node.idxCount) - 1 };
@@ -342,6 +381,130 @@ namespace dae
 
 			Subdivide(leftNodeIdx);
 			Subdivide(rightNodeIdx);
+		}
+
+		float CalculateNodeCost(const BVHNode& node)
+		{
+			Vector3 extent { node.maxAABB - node.minAABB };
+			float area{ extent.x * extent.y + extent.y * extent.z + extent.z * extent.x };
+			return node.idxCount * area;
+		}
+
+		float FindBestSplitPlane(BVHNode& node, int& axis, float& splitPos)
+		{
+			float bestCost{ FLT_MAX };
+			for (int axisIdx{}; axisIdx < 3; ++axisIdx)
+			{
+				float minBounds{ FLT_MAX };
+				float maxBounds{ FLT_MIN };
+
+				for (unsigned int idx{}; idx < node.idxCount; idx += 3)
+				{
+					const unsigned int idxOffset{ node.firstIdx + idx };
+					Vector3 centroid{
+						(transformedPositions[indices[idxOffset]] + transformedPositions[indices[idxOffset + 1]] + transformedPositions[indices[idxOffset + 2]]) * 0.3333f
+					};
+
+					minBounds = std::min(minBounds, centroid[axisIdx]);
+					maxBounds = std::max(maxBounds, centroid[axisIdx]);
+				}
+				const float boundsDifference{ maxBounds - minBounds };
+				if (abs(boundsDifference) < FLT_EPSILON) continue;
+
+				//Populate bins
+				const int amountOfBins{ 8 };
+				Bin bins[amountOfBins];
+				float scale = amountOfBins / boundsDifference;
+				for (unsigned int idx{}; idx < node.idxCount; idx += 3)
+				{
+					const unsigned int idxOffset{ node.firstIdx + idx };
+					const Vector3 v0{ transformedPositions[indices[idxOffset]] };
+					const Vector3 v1{ transformedPositions[indices[idxOffset + 1]] };
+					const Vector3 v2{ transformedPositions[indices[idxOffset + 2]] };
+					const Vector3 centroid{ (v0 + v1 + v2) * 0.3333f };
+
+					const int binIdx{ std::min(amountOfBins - 1, static_cast<int>((centroid[axisIdx] - minBounds) * scale)) };
+					bins[binIdx].idxCount += 3;
+					bins[binIdx].bounds.Grow(v0);
+					bins[binIdx].bounds.Grow(v1);
+					bins[binIdx].bounds.Grow(v2);
+				}
+
+				//Gather data for binAmount - 1 planes for binAmount planes
+				//const int amountPlaneBins{ amountOfBins - 1 };
+
+				float leftArea[amountOfBins - 1]{};
+				float rightArea[amountOfBins - 1]{};
+				int leftCount[amountOfBins - 1]{};
+				int rightCount[amountOfBins - 1]{};
+				int leftSum{};
+				int rightSum{};
+				AABB leftBox;
+				AABB rightBox;
+
+				for (int i{}; i < amountOfBins - 1; ++i)
+				{
+					//Left side
+					leftSum += bins[i].idxCount;
+					leftCount[i] = leftSum;
+					leftBox.Grow(bins[i].bounds);
+					leftArea[i] = leftBox.Area();
+
+					//Right side
+					rightSum += bins[amountOfBins - 1 - i].idxCount;
+					rightCount[amountOfBins - 1 - i - 1] = rightSum;
+					rightBox.Grow(bins[amountOfBins - 1 - i].bounds);
+					rightArea[amountOfBins - 1 - i - 1] = rightBox.Area();
+				}
+
+				//calculate SAH cost for the binAmount - 1 planes
+				scale = boundsDifference / amountOfBins;
+				for (int i{}; i < amountOfBins - 1; ++i)
+				{
+					const float planeCost{ leftCount[i] * leftArea[i] + rightCount[i] + rightArea[i] };
+					if (planeCost < bestCost)
+					{
+						axis = axisIdx;
+						splitPos = minBounds + scale * (i + 1);
+						bestCost = planeCost;
+					}
+				}
+			}
+			return bestCost;
+		}
+
+		float EvalulateSAH(BVHNode& node, int axis, float pos)
+		{
+			AABB leftBox{};
+			AABB rightBox{};
+			int leftCount{};
+			int rightCount{};
+			for (unsigned int idx{}; idx < node.idxCount; idx += 3)
+			{
+				const unsigned int idxOffset{ node.firstIdx + idx };
+				const Vector3 v0{ transformedPositions[indices[idxOffset]] };
+				const Vector3 v1{ transformedPositions[indices[idxOffset + 1]] };
+				const Vector3 v2{ transformedPositions[indices[idxOffset + 2]] };
+				const Vector3 centroid{ (v0 + v1 + v2) / 3.f };
+
+				if (centroid[axis] > pos)
+				{
+					++leftCount;
+					leftBox.Grow(v0);
+					leftBox.Grow(v1);
+					leftBox.Grow(v2);
+				}
+				else
+				{
+					++rightCount;
+					rightBox.Grow(v0);
+					rightBox.Grow(v1);
+					rightBox.Grow(v2);
+				}
+			}
+
+			const float cost{ leftCount * leftBox.Area() + rightCount * rightBox.Area() };
+			return cost > 0 ? cost : FLT_MAX;
 		}
 	};
 #pragma endregion

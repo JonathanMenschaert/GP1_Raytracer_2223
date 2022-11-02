@@ -62,7 +62,6 @@ namespace dae
 		{
 			const Matrix finalRotation = Matrix::CreateRotation({ totalPitch, totalYaw, 0.f });
 			forward = finalRotation.TransformVector(Vector3::UnitZ);
-			forward.Normalize();
 			forwardChanged = true;
 		}
 
