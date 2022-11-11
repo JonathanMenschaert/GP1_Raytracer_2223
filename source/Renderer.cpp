@@ -152,15 +152,21 @@ void dae::Renderer::RenderPixel(Scene* pScene, uint32_t pixelIndex, float aspect
 				break;
 			}
 			case LightingMode::ObservedArea:
+			{
 				const float observedArea{ std::max(Vector3::Dot(closestHit.normal, lightDirection), 0.f) };
 				finalColor += ColorRGB{ observedArea, observedArea, observedArea };
 				break;
+			}
 			case LightingMode::Radiance:
+			{
 				finalColor += LightUtils::GetRadiance(light, closestHit.origin);
 				break;
+			}
 			case LightingMode::BRDF:
+			{
 				finalColor += materials[closestHit.materialIndex]->Shade(closestHit, lightDirection, -viewDirection);
 				break;
+			}
 			}
 		}
 		finalColor *= shadowFactor;

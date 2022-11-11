@@ -353,8 +353,8 @@ namespace dae
 				}
 				else
 				{
-					std::swap(normals[i * 0.3334], normals[(j - 2) * 0.3334]);
-					std::swap(transformedNormals[i / 3], transformedNormals[(j - 2) * 0.3334]);
+					std::swap(normals[i / 3], normals[(j - 2) / 3]);
+					std::swap(transformedNormals[i / 3], transformedNormals[(j - 2) / 3]);
 
 					std::swap(indices[i], indices[j - 2]);
 					std::swap(indices[i + 1], indices[j - 1]);
@@ -393,7 +393,7 @@ namespace dae
 		{
 			Vector3 extent { node.maxAABB - node.minAABB };
 			float area{ extent.x * extent.y + extent.y * extent.z + extent.z * extent.x };
-			return node.idxCount * area;
+			return static_cast<float>(node.idxCount) * area;
 		}
 
 		float FindBestSplitPlane(BVHNode& node, int& axis, float& splitPos)
@@ -410,7 +410,7 @@ namespace dae
 				{
 					const unsigned int idxOffset{ node.firstIdx + idx };
 					Vector3 centroid{
-						(transformedPositions[indices[idxOffset]] + 
+						(transformedPositions[indices[node.firstIdx + idx]] + 
 						transformedPositions[indices[idxOffset + 1]] + 
 							transformedPositions[indices[idxOffset + 2]]) * 0.3333f
 					};
@@ -443,10 +443,10 @@ namespace dae
 				}
 
 				//Gather data for binAmount - 1 planes for binAmount planes
-				float leftArea[amountOfPlaneBins];
-				float rightArea[amountOfPlaneBins];
-				int leftCount[amountOfPlaneBins];
-				int rightCount[amountOfPlaneBins];
+				float leftArea[amountOfPlaneBins]{};
+				float rightArea[amountOfPlaneBins]{};
+				int leftCount[amountOfPlaneBins]{};
+				int rightCount[amountOfPlaneBins]{};
 				int leftSum{};
 				int rightSum{};
 				AABB leftBox;
@@ -471,7 +471,7 @@ namespace dae
 				scale = boundsDifference / amountOfBins;
 				for (int i{}; i < amountOfPlaneBins; ++i)
 				{
-					const float planeCost{ leftCount[i] * leftArea[i] + rightCount[i] + rightArea[i] };
+					const float planeCost{ leftCount[i] * leftArea[i] + rightCount[i] * rightArea[i] };
 					if (planeCost < bestCost)
 					{
 						axis = axisIdx;

@@ -186,8 +186,8 @@ namespace dae
 				hitRecord.materialIndex = triangle.materialIndex;
 				hitRecord.didHit = true;
 				hitRecord.normal = triangle.normal;
-				hitRecord.t = t;
 				hitRecord.origin = intersectionPoint;
+				hitRecord.t = t;
 			}
 
 			return true;
