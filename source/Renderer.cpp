@@ -163,8 +163,7 @@ void dae::Renderer::RenderPixel(Scene* pScene, uint32_t pixelIndex, float aspect
 	m_pBufferPixels[px + (py * m_Width)] = SDL_MapRGB(m_pBuffer->format,
 		static_cast<uint8_t>(finalColor.r * 255),
 		static_cast<uint8_t>(finalColor.g * 255),
-		static_cast<uint8_t>(finalColor.b * 255));
-	
+		static_cast<uint8_t>(finalColor.b * 255));	
 }
 
 bool Renderer::SaveBufferToImage() const

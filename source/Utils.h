@@ -14,6 +14,7 @@ namespace dae
 		//SPHERE HIT-TESTS
 		inline bool HitTest_Sphere(const Sphere& sphere, const Ray& ray, HitRecord& hitRecord, bool ignoreHitRecord = false)
 		{
+			//Analytic
 			//const Vector3 originVector{ ray.origin - sphere.origin };
 			////at² + bt + c = 0
 			//const float a{ Vector3::Dot(ray.direction, ray.direction) };
@@ -222,20 +223,20 @@ namespace dae
 		//Including part 2 & 3
 		inline bool SlabTest_BVH(const Vector3& minAABB, const Vector3& maxAABB, const Ray& ray)
 		{
-			float tx1 = (minAABB.x - ray.origin.x) / ray.direction.x;
-			float tx2 = (maxAABB.x - ray.origin.x) / ray.direction.x;
+			float tx1 = (minAABB.x - ray.origin.x) * ray.inversedDir.x;
+			float tx2 = (maxAABB.x - ray.origin.x) * ray.inversedDir.x;
 
 			float tMin = std::min(tx1, tx2);
 			float tMax = std::max(tx1, tx2);
 
-			float ty1 = (minAABB.y - ray.origin.y) / ray.direction.y;
-			float ty2 = (maxAABB.y - ray.origin.y) / ray.direction.y;
+			float ty1 = (minAABB.y - ray.origin.y) * ray.inversedDir.y;
+			float ty2 = (maxAABB.y - ray.origin.y) * ray.inversedDir.y;
 
 			tMin = std::max(tMin, std::min(ty1, ty2));
 			tMax = std::min(tMax, std::max(ty1, ty2));
 
-			float tz1 = (minAABB.z - ray.origin.z) / ray.direction.z;
-			float tz2 = (maxAABB.z - ray.origin.z) / ray.direction.z;
+			float tz1 = (minAABB.z - ray.origin.z) * ray.inversedDir.z;
+			float tz2 = (maxAABB.z - ray.origin.z) * ray.inversedDir.z;
 
 			tMin = std::max(tMin, std::min(tz1, tz2));
 			tMax = std::min(tMax, std::max(tz1, tz2));

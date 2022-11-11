@@ -195,9 +195,9 @@ namespace dae
 			for (size_t idx{}; idx < indices.size(); idx += idxIncr)
 			{
 				size_t startIdx{ idx };
-				const Vector3 v0{ positions[static_cast<size_t>(indices[startIdx])] };
-				const Vector3 v1{ positions[static_cast<size_t>(indices[++startIdx])] };
-				const Vector3 v2{ positions[static_cast<size_t>(indices[++startIdx])] };
+				const Vector3& v0{ positions[static_cast<size_t>(indices[startIdx])] };
+				const Vector3& v1{ positions[static_cast<size_t>(indices[++startIdx])] };
+				const Vector3& v2{ positions[static_cast<size_t>(indices[++startIdx])] };
 
 				Vector3 edgeA{ v1 - v0 };
 				Vector3 edgeB{ v2 - v0 };
@@ -418,9 +418,9 @@ namespace dae
 				for (unsigned int idx{}; idx < node.idxCount; idx += 3)
 				{
 					const unsigned int idxOffset{ node.firstIdx + idx };
-					const Vector3 v0{ transformedPositions[indices[idxOffset]] };
-					const Vector3 v1{ transformedPositions[indices[idxOffset + 1]] };
-					const Vector3 v2{ transformedPositions[indices[idxOffset + 2]] };
+					const Vector3& v0{ transformedPositions[indices[idxOffset]] };
+					const Vector3& v1{ transformedPositions[indices[idxOffset + 1]] };
+					const Vector3& v2{ transformedPositions[indices[idxOffset + 2]] };
 					const Vector3 centroid{ (v0 + v1 + v2) * 0.3333f };
 
 					const int binIdx{ std::min(amountOfBins - 1, static_cast<int>((centroid[axisIdx] - minBounds) * scale)) };
@@ -482,9 +482,9 @@ namespace dae
 			for (unsigned int idx{}; idx < node.idxCount; idx += 3)
 			{
 				const unsigned int idxOffset{ node.firstIdx + idx };
-				const Vector3 v0{ transformedPositions[indices[idxOffset]] };
-				const Vector3 v1{ transformedPositions[indices[idxOffset + 1]] };
-				const Vector3 v2{ transformedPositions[indices[idxOffset + 2]] };
+				const Vector3& v0{ transformedPositions[indices[idxOffset]] };
+				const Vector3& v1{ transformedPositions[indices[idxOffset + 1]] };
+				const Vector3& v2{ transformedPositions[indices[idxOffset + 2]] };
 				const Vector3 centroid{ (v0 + v1 + v2) / 3.f };
 
 				if (centroid[axis] > pos)
@@ -530,9 +530,26 @@ namespace dae
 	{
 		Vector3 origin{};
 		Vector3 direction{};
+		Vector3 inversedDir{};
 
 		float min{ 0.0001f };
 		float max{ FLT_MAX };
+
+		Ray(const Vector3& origin, const Vector3& dir)
+			: origin{ origin }
+			, direction{ dir }
+			, inversedDir{ 1.f / dir.x, 1.f / dir.y, 1.f / dir.z }
+		{
+		}
+
+		Ray(const Vector3& origin, const Vector3& dir, float minDistance, float maxDistance)
+			: origin{origin}
+			, direction{dir}
+			, inversedDir{1.f / dir.x, 1.f / dir.y, 1.f / dir.z}
+			, min {minDistance}
+			, max {maxDistance}
+		{
+		}
 	};
 
 	struct HitRecord
