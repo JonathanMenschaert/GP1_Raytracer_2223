@@ -288,8 +288,9 @@ namespace dae
 			transformedMaxAABB = tMaxAABB;
 		}
 
-		//BVH algoritme taken from: https://jacco.ompf2.com/2022/04/13/how-to-build-a-bvh-part-1-basics/
-		//Including part 2 & 3
+		//BVH algorithm taken from: https://jacco.ompf2.com/2022/04/13/how-to-build-a-bvh-part-1-basics/
+		//Part 2: https://jacco.ompf2.com/2022/04/18/how-to-build-a-bvh-part-2-faster-rays/
+		//Part 3: https://jacco.ompf2.com/2022/04/21/how-to-build-a-bvh-part-3-quick-builds/
 		void BuildBVH()
 		{			
 			BVHNode& root{ pBVHNodes[rootNodeIdx] };

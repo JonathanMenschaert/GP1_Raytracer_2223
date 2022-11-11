@@ -50,6 +50,7 @@ namespace dae
 			//}
 			//return false;
 
+			//Improved geometric sphere hittest
 			const Vector3 originVector{ sphere.origin - ray.origin };
 			const float originVectorSqr{ originVector.SqrMagnitude() };
 			const float originVectorMagnitudeProjected { Vector3::Dot(ray.direction, originVector) };
@@ -111,6 +112,8 @@ namespace dae
 		{
 			const float cullDot{ Vector3::Dot(triangle.normal, ray.direction) };
 			if (abs(cullDot) < FLT_EPSILON) return false;
+
+			//Invert cullmode for shadow casting
 			TriangleCullMode cullMode = triangle.cullMode;
 			if (ignoreHitRecord)
 			{
@@ -137,6 +140,7 @@ namespace dae
 				break;
 			}
 
+			//Möller Trumbore algorithm
 			//Source: https://en.wikipedia.org/wiki/M%C3%B6ller%E2%80%93Trumbore_intersection_algorithm
 			Vector3 edge1{ triangle.v1 - triangle.v0 };
 			Vector3 edge2{ triangle.v2 - triangle.v0 };
@@ -159,6 +163,7 @@ namespace dae
 
 			Vector3 intersectionPoint{ ray.origin + t * ray.direction };
 
+			//Cross product test
 			/*const Vector3 center{ (triangle.v0 + triangle.v1 + triangle.v2) / 3.f };
 			const Vector3 vectorToPlane{ center - ray.origin };
 			const float t{ Vector3::Dot(vectorToPlane, triangle.normal) / cullDot };
@@ -198,20 +203,21 @@ namespace dae
 
 		inline bool SlabTest_TriangleMesh(const TriangleMesh& mesh, const Ray& ray)
 		{
-			float tx1 = (mesh.transformedMinAABB.x - ray.origin.x) / ray.direction.x;
-			float tx2 = (mesh.transformedMaxAABB.x - ray.origin.x) / ray.direction.x;
+			//AABB hittest using the inversed direction in ray
+			float tx1 = (mesh.transformedMinAABB.x - ray.origin.x) * ray.inversedDir.x;
+			float tx2 = (mesh.transformedMaxAABB.x - ray.origin.x) * ray.inversedDir.x;
 
 			float tMin = std::min(tx1, tx2);
 			float tMax = std::max(tx1, tx2);
 
-			float ty1 = (mesh.transformedMinAABB.y - ray.origin.y) / ray.direction.y;
-			float ty2 = (mesh.transformedMaxAABB.y - ray.origin.y) / ray.direction.y;
+			float ty1 = (mesh.transformedMinAABB.y - ray.origin.y) * ray.inversedDir.y;
+			float ty2 = (mesh.transformedMaxAABB.y - ray.origin.y) * ray.inversedDir.y;
 
 			tMin = std::max(tMin, std::min(ty1, ty2));
 			tMax = std::min(tMax, std::max(ty1, ty2));
 
-			float tz1 = (mesh.transformedMinAABB.z - ray.origin.z) / ray.direction.z;
-			float tz2 = (mesh.transformedMaxAABB.z - ray.origin.z) / ray.direction.z;
+			float tz1 = (mesh.transformedMinAABB.z - ray.origin.z) * ray.inversedDir.z;
+			float tz2 = (mesh.transformedMaxAABB.z - ray.origin.z) * ray.inversedDir.z;
 
 			tMin = std::max(tMin, std::min(tz1, tz2));
 			tMax = std::min(tMax, std::max(tz1, tz2));
@@ -219,10 +225,12 @@ namespace dae
 			return tMax > 0 && tMax >= tMin;
 		}
 
-		//BVH algoritme taken from: https://jacco.ompf2.com/2022/04/13/how-to-build-a-bvh-part-1-basics/
-		//Including part 2 & 3
+		//BVH algorithm taken from: https://jacco.ompf2.com/2022/04/13/how-to-build-a-bvh-part-1-basics/
+		//Part 2: https://jacco.ompf2.com/2022/04/18/how-to-build-a-bvh-part-2-faster-rays/
+		//Part 3: https://jacco.ompf2.com/2022/04/21/how-to-build-a-bvh-part-3-quick-builds/
 		inline bool SlabTest_BVH(const Vector3& minAABB, const Vector3& maxAABB, const Ray& ray)
 		{
+			//BVH AABB slabtest with inversed direction in ray
 			float tx1 = (minAABB.x - ray.origin.x) * ray.inversedDir.x;
 			float tx2 = (maxAABB.x - ray.origin.x) * ray.inversedDir.x;
 
@@ -247,13 +255,15 @@ namespace dae
 
 		inline void IntersectionTest_BVH(const TriangleMesh& mesh, unsigned int nodeIdx, const Ray& ray, bool& didHit, HitRecord& hitRecord, HitRecord& currentRecord, bool ignoreHitRecord)
 		{
-
+			
 			BVHNode& node{ mesh.pBVHNodes[nodeIdx] };
+			//Test if ray intersects the node's bounding box
 			if (!SlabTest_BVH(node.minAABB, node.maxAABB, ray))
 			{
 				return;
 			}
 
+			//If the node is a leaf, run the hittest code
 			if (node.IsLeaf())
 			{
 				Triangle triangle{};
@@ -281,6 +291,7 @@ namespace dae
 			}
 			else
 			{
+				//Run intersectiontest on children if node is not a leaf
 				IntersectionTest_BVH(mesh, node.leftNode, ray, didHit, hitRecord, currentRecord, ignoreHitRecord);
 				IntersectionTest_BVH(mesh, node.leftNode + 1, ray, didHit, hitRecord, currentRecord, ignoreHitRecord);
 			}
@@ -291,9 +302,11 @@ namespace dae
 			
 			HitRecord closestHit{};
 			bool didHit{ };
+			//Run bvh if enabled, otherwise run the hittest directly
 #ifdef BVH
 			IntersectionTest_BVH(mesh, 0, ray, didHit, hitRecord, closestHit, ignoreHitRecord);
 #else
+			//Check if the ray intersects with the boundingbox
 			if (!SlabTest_TriangleMesh(mesh, ray))
 			{
 				return false;
@@ -342,9 +355,11 @@ namespace dae
 			case LightType::Point:
 				return { light.origin - origin };
 			case LightType::Directional:
-				return {  FLT_MAX * (light.origin - origin) };
+				return { light.origin - origin };
+			default:
+				//Return default vector if an invalid/unimplemented type was used for LightType
+				return Vector3{};
 			}
-			return Vector3{};
 		}
 
 		inline ColorRGB GetRadiance(const Light& light, const Vector3& target)
@@ -356,8 +371,11 @@ namespace dae
 				return { light.color * (light.intensity / (light.origin - target).SqrMagnitude())};
 			case LightType::Directional:
 				return { light.color * light.intensity};
+			default:
+				//Return default Color if an invalid/unimplemented type was used for LightType
+				return ColorRGB{};
 			}
-			return ColorRGB{};
+			
 		}
 	}
 
@@ -371,7 +389,7 @@ namespace dae
 			std::ifstream file(filename);
 			if (!file)
 				return false;
-
+			const char delimiter{ '/' };
 			std::string sCommand;
 			// start a while iteration ending when the end of file is reached (ios::eof)
 			while (!file.eof())
@@ -392,8 +410,7 @@ namespace dae
 				}
 				else if (sCommand == "f")
 				{
-					//Loading in maya obj files indices with the / delimiter
-					const char delimiter{ '/' };
+					//Loading in maya obj files indices with the '/' delimiter
 					float i0, i1, i2;
 					std::string s0, s1, s2;
 					file >> s0 >> s1 >> s2;

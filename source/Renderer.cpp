@@ -99,24 +99,30 @@ void Renderer::Render(Scene* pScene) const
 
 void dae::Renderer::RenderPixel(Scene* pScene, uint32_t pixelIndex, float aspectRatio, const Camera& camera, const std::vector<Light>& lights, const std::vector<Material*>& materials) const
 {
+
+	//Calculate pixel locations and pixel centers
 	const int px = pixelIndex % m_Width;
 	const int py = pixelIndex / m_Width;
 	
 	const float cx = (2.f * ((px + 0.5f) / m_Width) - 1) * m_AspectRatio * camera.fov;
 	const float cy = (1.f - (2.f * (py + 0.5f) / m_Height)) * camera.fov;
 
+
+	//Calculate view direction & ray
 	Vector3 viewDirection{ camera.cameraToWorld.TransformVector(cx, cy, 1) };
 	viewDirection.Normalize();
-
 	const Ray viewRay{ camera.origin,  viewDirection };
-	
+
+	//Attempt to hit an object with the calculated ray
 	HitRecord closestHit{};
 	pScene->GetClosestHit(viewRay, closestHit);
 
 	float shadowFactor{ 1.f };
 	ColorRGB finalColor{};
+
 	if (closestHit.didHit)
 	{
+		//offset from the hit origin to prevent the object from incorrectly shadowing itself.
 		const Vector3 originOffset{ closestHit.origin + closestHit.normal * 0.0001f };
 
 		for (const auto& light : lights)
@@ -126,25 +132,27 @@ void dae::Renderer::RenderPixel(Scene* pScene, uint32_t pixelIndex, float aspect
 
 			if (m_ShadowsEnabled)
 			{
-				const Ray lightRay{ originOffset, lightDirection, 0.0001f, magnitude };
-				if (pScene->DoesHit(lightRay)) 
+				//Attempt to hit an object between the the hit origin and the light.
+				const Ray shadowRay{ originOffset, lightDirection, 0.0001f, magnitude };				
+				if (pScene->DoesHit(shadowRay)) 
 				{
 					shadowFactor *= 0.95f;
 					continue;
 				}
-			}
-			const float observedArea{ std::max(Vector3::Dot(closestHit.normal, lightDirection), 0.f) };
+			}			
 
 			switch (m_CurrentLightingMode)
 			{
 			case LightingMode::Combined:
 			{
+				const float observedArea{ std::max(Vector3::Dot(closestHit.normal, lightDirection), 0.f) };
 				const ColorRGB radiance{ LightUtils::GetRadiance(light, closestHit.origin) };
 				const ColorRGB brdf{ materials[closestHit.materialIndex]->Shade(closestHit, lightDirection, -viewDirection) };
 				finalColor += observedArea * radiance * brdf;
 				break;
 			}
 			case LightingMode::ObservedArea:
+				const float observedArea{ std::max(Vector3::Dot(closestHit.normal, lightDirection), 0.f) };
 				finalColor += ColorRGB{ observedArea, observedArea, observedArea };
 				break;
 			case LightingMode::Radiance:
