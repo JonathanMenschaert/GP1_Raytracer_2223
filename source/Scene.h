@@ -181,4 +181,22 @@ namespace dae
 	private:
 		TriangleMesh* m_pMesh{ nullptr };
 	};
+
+	class Scene_W4_OptionalScene final : public Scene
+	{
+	public:
+		Scene_W4_OptionalScene() = default;
+		~Scene_W4_OptionalScene() override = default;
+
+		Scene_W4_OptionalScene(const Scene_W4_OptionalScene&) = delete;
+		Scene_W4_OptionalScene(Scene_W4_OptionalScene&&) noexcept = delete;
+		Scene_W4_OptionalScene& operator=(const Scene_W4_OptionalScene&) = delete;
+		Scene_W4_OptionalScene& operator=(Scene_W4_OptionalScene&&) noexcept = delete;
+
+		void Initialize() override;
+		void Update(Timer* pTimer) override;
+
+	private:
+		TriangleMesh* m_pMesh{ nullptr };
+	};
 }

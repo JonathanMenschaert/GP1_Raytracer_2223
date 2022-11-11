@@ -302,14 +302,12 @@ namespace dae
 			//Reset nodesUsed to 1 to take into account the root node
 			nodesUsed = 1;
 
-			//Update Nodes
 			UpdateNodeBounds(rootNodeIdx);
 			Subdivide(rootNodeIdx);
 		}
 
 		void UpdateNodeBounds(unsigned int nodeIdx)
 		{
-			//Reset bounding box of the node
 			BVHNode& node{ pBVHNodes[nodeIdx] };
 			node.minAABB = Vector3::MaxVector;
 			node.maxAABB = Vector3::MinVector;
@@ -368,7 +366,6 @@ namespace dae
 				return;
 			}
 
-			//Setting Data
 			int leftNodeIdx = nodesUsed++;
 			int rightNodeIdx = nodesUsed++;
 
@@ -377,10 +374,7 @@ namespace dae
 			pBVHNodes[leftNodeIdx].idxCount = leftCount;
 			pBVHNodes[rightNodeIdx].firstIdx = static_cast<unsigned int>(i);
 			pBVHNodes[rightNodeIdx].idxCount = node.idxCount - leftCount;
-			//Resetting idx count of this node to indicate it is not a leaf.
 			node.idxCount = 0;
-
-			//Update child nodes
 			UpdateNodeBounds(leftNodeIdx);
 			UpdateNodeBounds(rightNodeIdx);
 
@@ -398,13 +392,11 @@ namespace dae
 		float FindBestSplitPlane(BVHNode& node, int& axis, float& splitPos)
 		{
 			float bestCost{ FLT_MAX };
-			//Loop over all axes with x = 0, y = 1, z = 2, to determine the best split axis
 			for (int axisIdx{}; axisIdx < 3; ++axisIdx)
 			{
 				float minBounds{ FLT_MAX };
 				float maxBounds{ FLT_MIN };
 
-				//Calculate bounding box for this node
 				for (unsigned int idx{}; idx < node.idxCount; idx += 3)
 				{
 					const unsigned int idxOffset{ node.firstIdx + idx };
@@ -417,11 +409,10 @@ namespace dae
 					minBounds = std::min(minBounds, centroid[axisIdx]);
 					maxBounds = std::max(maxBounds, centroid[axisIdx]);
 				}
-				//Continue to next loop if bounds are equal
 				const float boundsDifference{ maxBounds - minBounds };
 				if (abs(boundsDifference) < FLT_EPSILON) continue;
 
-				//Populate bins with positions
+				//Populate bins
 				const int amountOfBins{ 8 };
 				Bin bins[amountOfBins];
 				float scale = amountOfBins / boundsDifference;
@@ -442,6 +433,8 @@ namespace dae
 				}
 
 				//Gather data for binAmount - 1 planes for binAmount planes
+				
+
 				float leftArea[amountOfPlaneBins];
 				float rightArea[amountOfPlaneBins];
 				int leftCount[amountOfPlaneBins];
@@ -482,7 +475,6 @@ namespace dae
 			return bestCost;
 		}
 
-		//Unused
 		float EvalulateSAH(BVHNode& node, int axis, float pos)
 		{
 			AABB leftBox{};
@@ -545,8 +537,6 @@ namespace dae
 		float min{ 0.0001f };
 		float max{ FLT_MAX };
 
-
-		//Constructors to inverse direction so multiplication can be used instead of division
 		Ray(const Vector3& origin, const Vector3& dir)
 			: origin{ origin }
 			, direction{ dir }

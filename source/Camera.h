@@ -44,8 +44,8 @@ namespace dae
 		{
 			if (forwardChanged)
 			{
-				right = Vector3::Cross(Vector3::UnitY, forward);
-				up = Vector3::Cross(forward, right);
+				right = Vector3::Cross(Vector3::UnitY, forward).Normalized();
+				up = Vector3::Cross(forward, right).Normalized();
 				cameraToWorld = { right, up, forward, origin };
 				forwardChanged = false;
 			}

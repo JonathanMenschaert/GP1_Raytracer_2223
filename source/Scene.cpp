@@ -421,9 +421,7 @@ namespace dae {
 		AddPlane({ 0.f, 0.f, 0.f }, { 0.f, 1.f, 0.f }, matLambert_GrayBlue);
 		AddPlane({ 0.f, 10.f, 0.f }, { 0.f, -1.f, 0.f }, matLambert_GrayBlue);
 		AddPlane({ 5.f, 0.f, 0.f }, { -1.f, 0.f, 0.f }, matLambert_GrayBlue);
-		AddPlane({ -5.f, 0.f, 0.f }, { 1.f, 0.f, 0.f }, matLambert_GrayBlue);
-
-		
+		AddPlane({ -5.f, 0.f, 0.f }, { 1.f, 0.f, 0.f }, matLambert_GrayBlue);		
 
 		//Light
 		AddPointLight({ 0.f, 5.f, 5.f }, 50.f, ColorRGB{ 1.f, 0.61f, 0.45f });
@@ -438,4 +436,40 @@ namespace dae {
 		m_pMesh->UpdateTransforms();
 	}
 #pragma endregion
+	void Scene_W4_OptionalScene::Initialize()
+	{
+		sceneName = "Optional Scene";
+		m_Camera.origin = { 0.f, 2.f, -9.f };
+		m_Camera.SetCameraFOV(45.f);
+
+		const auto matLambert_GrayBlue = AddMaterial(new Material_Lambert(ColorRGB{ 0.49f, 0.57f, 0.57f }, 1.f));
+		const auto matLambert_White = AddMaterial(new Material_Lambert(colors::White, 1.f));
+
+		//TriangleMesh
+		m_pMesh = AddTriangleMesh(TriangleCullMode::BackFaceCulling, matLambert_White);
+		Utils::ParseOBJ("Resources/Assignment3D1.obj", m_pMesh->positions, m_pMesh->normals, m_pMesh->indices);
+		m_pMesh->Scale({ 0.03f, 0.03f, 0.03f });
+		m_pMesh->pBVHNodes = new BVHNode[m_pMesh->indices.size()];
+		m_pMesh->UpdateAABB();
+		m_pMesh->UpdateTransforms();
+
+		//Plane
+		AddPlane({ 0.f, 0.f, 10.f }, { 0.f, 0.f, -1.f }, matLambert_GrayBlue);
+		AddPlane({ 0.f, 0.f, 0.f }, { 0.f, 1.f, 0.f }, matLambert_GrayBlue);
+		AddPlane({ 0.f, 10.f, 0.f }, { 0.f, -1.f, 0.f }, matLambert_GrayBlue);
+		AddPlane({ 5.f, 0.f, 0.f }, { -1.f, 0.f, 0.f }, matLambert_GrayBlue);
+		AddPlane({ -5.f, 0.f, 0.f }, { 1.f, 0.f, 0.f }, matLambert_GrayBlue);
+
+		//Light
+		AddPointLight({ 0.f, 5.f, 5.f }, 50.f, ColorRGB{ 1.f, 0.61f, 0.45f });
+		AddPointLight({ -2.5f, 5.f, -5.f }, 70.f, ColorRGB{ 1.f, 0.8f, 0.45f });
+		AddPointLight({ 2.5f, 2.5f, -5.f }, 50.f, ColorRGB{ 0.34f, 0.47f, 0.68f });
+	}
+	void Scene_W4_OptionalScene::Update(Timer* pTimer)
+	{
+		Scene::Update(pTimer);
+		const auto yawAngle{ (cosf(pTimer->GetTotal()) + 1.f) / 2.f * PI_2 };
+		m_pMesh->RotateY(yawAngle);
+		m_pMesh->UpdateTransforms();
+	}
 }

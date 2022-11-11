@@ -392,8 +392,17 @@ namespace dae
 				}
 				else if (sCommand == "f")
 				{
+					//Loading in maya obj files indices with the / delimiter
+					const char delimiter{ '/' };
 					float i0, i1, i2;
-					file >> i0 >> i1 >> i2;
+					std::string s0, s1, s2;
+					file >> s0 >> s1 >> s2;
+					if (s0.empty() || s1.empty() || s2.empty()) continue;
+					i0 = std::stof(s0.substr(0, s0.find(delimiter)));
+					i1 = std::stof(s1.substr(0, s1.find(delimiter)));
+					i2 = std::stof(s2.substr(0, s2.find(delimiter)));
+
+					//file >> i0 >> i1 >> i2;
 
 					indices.push_back((int)i0 - 1);
 					indices.push_back((int)i1 - 1);
