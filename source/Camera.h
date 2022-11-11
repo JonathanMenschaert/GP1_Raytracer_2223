@@ -39,8 +39,8 @@ namespace dae
 
 		Matrix cameraToWorld{};
 
-		//Change to support reference
-		Matrix CalculateCameraToWorld()
+		//Return calculated rotationmatrix. Recalculate if the forward vector changed
+		const Matrix& CalculateCameraToWorld()
 		{
 			if (forwardChanged)
 			{
@@ -67,31 +67,33 @@ namespace dae
 
 		void Update(Timer* pTimer)
 		{
+			//Set constants
 			const float deltaTime = pTimer->GetElapsed();
 			const float linearSpeed{ 4.f };
-			const float rotationSpeed{ 10.f };
-			float shiftModifier{ 1.f };
-			
+			const float rotationSpeed{ 15.f };			
 
 			//Keyboard Input
 			const uint8_t* pKeyboardState = SDL_GetKeyboardState(nullptr);
-			const bool isShiftPressed{ pKeyboardState[SDL_SCANCODE_LSHIFT] || pKeyboardState[SDL_SCANCODE_RSHIFT] };
-			
-			shiftModifier = 4.f * isShiftPressed + 1.f * !isShiftPressed;
-			SetCameraFOV(fovAngle - pKeyboardState[SDL_SCANCODE_LEFT] + pKeyboardState[SDL_SCANCODE_RIGHT]);
-			
-			float speedModifier{ deltaTime * linearSpeed * shiftModifier };
 
-			origin += forward * speedModifier * pKeyboardState[SDL_SCANCODE_W];
-			origin += forward * -speedModifier * pKeyboardState[SDL_SCANCODE_S];
-			origin += right * speedModifier * pKeyboardState[SDL_SCANCODE_D];
-			origin += right * -speedModifier * pKeyboardState[SDL_SCANCODE_A];
+			const bool isShiftPressed{ pKeyboardState[SDL_SCANCODE_LSHIFT] || pKeyboardState[SDL_SCANCODE_RSHIFT] };			
+			const float shiftModifier{ 4.f * isShiftPressed + 1.f * !isShiftPressed };			
+			const float speedModifier{ deltaTime * linearSpeed * shiftModifier };
+
+			const bool isForwardsPressed{ pKeyboardState[SDL_SCANCODE_W] || pKeyboardState[SDL_SCANCODE_UP] };
+			const bool isBackwardsPressed{ pKeyboardState[SDL_SCANCODE_S] || pKeyboardState[SDL_SCANCODE_DOWN] };
+			const bool isRightPressed{ pKeyboardState[SDL_SCANCODE_D] || pKeyboardState[SDL_SCANCODE_RIGHT] };
+			const bool isLeftPressed{ pKeyboardState[SDL_SCANCODE_A] || pKeyboardState[SDL_SCANCODE_LEFT] };
+			origin += forward * speedModifier * isForwardsPressed;
+			origin += forward * -speedModifier * isBackwardsPressed;
+			origin += right * speedModifier * isRightPressed;
+			origin += right * -speedModifier * isLeftPressed;
 
 			//Mouse Input
 			int mouseX{}, mouseY{};
 			const uint32_t mouseState = SDL_GetRelativeMouseState(&mouseX, &mouseY);
-			float rotationModifier{ deltaTime * rotationSpeed * shiftModifier };			
+			const float rotationModifier{ deltaTime * rotationSpeed * shiftModifier };			
 			
+			//Calculate rotation & movement on mouse movement
 			if (mouseY != 0.f || mouseX != 0.f)
 			{
 				origin += forward * speedModifier * (mouseState == SDL_BUTTON_LMASK) * static_cast<float>(mouseY);

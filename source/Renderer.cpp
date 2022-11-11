@@ -141,6 +141,7 @@ void dae::Renderer::RenderPixel(Scene* pScene, uint32_t pixelIndex, float aspect
 				}
 			}			
 
+			//Calculate the color of the pixel based on the lighting mode
 			switch (m_CurrentLightingMode)
 			{
 			case LightingMode::Combined:

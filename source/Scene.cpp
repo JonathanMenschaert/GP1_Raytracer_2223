@@ -443,7 +443,7 @@ namespace dae {
 		m_Camera.SetCameraFOV(45.f);
 
 		const auto matLambert_GrayBlue = AddMaterial(new Material_Lambert(ColorRGB{ 0.49f, 0.57f, 0.57f }, 1.f));
-		const auto matLambert_White = AddMaterial(new Material_Lambert(colors::White, 1.f));
+		const auto matLambert_White = AddMaterial(new Material_CookTorrence(ColorRGB{0.72f, 0.254f, 0.055f}, 1.0f, 0.7f));
 
 		//TriangleMesh
 		m_pMesh = AddTriangleMesh(TriangleCullMode::BackFaceCulling, matLambert_White);

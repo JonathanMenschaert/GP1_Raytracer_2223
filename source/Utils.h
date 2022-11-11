@@ -22,7 +22,6 @@ namespace dae
 			//const float c{ Vector3::Dot(originVector, originVector) - Square(sphere.radius)};
 			//
 			//const float discriminant = Square(b) - 4 * a * c;
-
 			//if (discriminant > 0) 
 			//{
 			//	const float discriminantSqrt{ sqrtf(discriminant) };
@@ -49,7 +48,6 @@ namespace dae
 			//	}
 			//}
 			//return false;
-
 			//Improved geometric sphere hittest
 			const Vector3 originVector{ sphere.origin - ray.origin };
 			const float originVectorSqr{ originVector.SqrMagnitude() };
@@ -163,23 +161,15 @@ namespace dae
 
 			Vector3 intersectionPoint{ ray.origin + t * ray.direction };
 
-			//Cross product test
-			/*const Vector3 center{ (triangle.v0 + triangle.v1 + triangle.v2) / 3.f };
+			/*Cross product test
+			const Vector3 center{ (triangle.v0 + triangle.v1 + triangle.v2) / 3.f };
 			const Vector3 vectorToPlane{ center - ray.origin };
 			const float t{ Vector3::Dot(vectorToPlane, triangle.normal) / cullDot };
-
 			if (t < ray.min || t >= ray.max) return false;
-
 			const Vector3 intersectionPoint{ ray.origin + t * ray.direction };
-
 			if (Vector3::Dot(triangle.normal, Vector3::Cross(triangle.v1 - triangle.v0, intersectionPoint - triangle.v0)) < 0) return false;
-
-
 			if (Vector3::Dot(triangle.normal, Vector3::Cross(triangle.v2 - triangle.v1, intersectionPoint - triangle.v1)) < 0) return false;
-
-
 			if (Vector3::Dot(triangle.normal, Vector3::Cross(triangle.v0 - triangle.v2, intersectionPoint - triangle.v2)) < 0) return false;*/
-
 			
 			if (!ignoreHitRecord)
 			{

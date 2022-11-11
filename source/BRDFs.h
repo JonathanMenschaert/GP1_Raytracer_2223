@@ -32,10 +32,10 @@ namespace dae
 		 */
 		static ColorRGB Phong(float ks, float exp, const Vector3& l, const Vector3& v, const Vector3& n)
 		{
-			Vector3 reflect{ l - 2 * std::max(Vector3::Dot(n, l), 0.f) * n };
-			float cosa = Vector3::Dot(reflect, v);
-			float specularReflection{ ks * powf(cosa, exp) };
-			specularReflection = std::max(specularReflection, 0.f);
+			const Vector3 reflect{ l - 2 * std::max(Vector3::Dot(n, l), 0.f) * n };
+			//Used std::max to prevent the result of the dotproduct going under 0
+			const float cosa = std::max(Vector3::Dot(reflect, v), 0.f);
+			const float specularReflection{ ks * powf(cosa, exp) };
 			return ColorRGB{1, 1, 1} * specularReflection;
 		}
 
@@ -48,7 +48,7 @@ namespace dae
 		 */
 		static ColorRGB FresnelFunction_Schlick(const Vector3& h, const Vector3& v, const ColorRGB& f0)
 		{
-			
+			//Used std::max to prevent the result of the dotproduct going under 0
 			return f0 + ((ColorRGB{1, 1, 1} - f0) * powf(1 - std::max(Vector3::Dot(h, v), 0.f), 5));
 		}
 
@@ -61,8 +61,9 @@ namespace dae
 		 */
 		static float NormalDistribution_GGX(const Vector3& n, const Vector3& h, float roughness)
 		{
-			float a{ Square(roughness) };
-			float sqrA{ Square(a) };
+			const float a{ Square(roughness) };
+			const float sqrA{ Square(a) };
+			//Used std::max to prevent the result of the dotproduct going under 0
 			return sqrA / (PI * Square(Square(std::max(Vector3::Dot(n, h), 0.f)) * (Square(a) - 1) + 1));
 		}
 
@@ -76,10 +77,11 @@ namespace dae
 		 */
 		static float GeometryFunction_SchlickGGX(const Vector3& n, const Vector3& v, float roughness)
 		{
-			float a{ Square(roughness) };
-			float k{ Square(a + 1) / 8 };
-			float clampedDot{ std::max(Vector3::Dot(n, v), 0.f) };
-			float geometry{ clampedDot / ((clampedDot * (1 - k)) + k) };
+			const float a{ Square(roughness) };
+			const float k{ Square(a + 1) / 8 };
+			//Used std::max to prevent the result of the dotproduct going under 0
+			const float clampedDot{ std::max(Vector3::Dot(n, v), 0.f) };
+			const float geometry{ clampedDot / ((clampedDot * (1 - k)) + k) };
 			return geometry;
 		}
 

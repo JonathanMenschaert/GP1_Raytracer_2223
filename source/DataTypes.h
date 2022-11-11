@@ -293,8 +293,7 @@ namespace dae
 		//Part 3: https://jacco.ompf2.com/2022/04/21/how-to-build-a-bvh-part-3-quick-builds/
 		void BuildBVH()
 		{			
-			BVHNode& root{ pBVHNodes[rootNodeIdx] };
-			
+			BVHNode& root{ pBVHNodes[rootNodeIdx] };			
 
 			root.leftNode = 0;
 			root.firstIdx = 0;
